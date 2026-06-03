@@ -296,7 +296,7 @@ const handleCreate = async () => {
 
   creating.value = true
   try {
-    await createFamily({ name: createForm.name })
+    await createFamily({ familyName: createForm.name })
     ElMessage.success('家庭创建成功')
     await loadData()
   } catch {

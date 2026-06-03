@@ -2,11 +2,11 @@ import request from './request'
 
 // 告警规则
 export function createAlertRule(data) {
-  return request.post('/alert/rule', data)
+  return request.post('/alert/rule/update', data)
 }
 
 export function updateAlertRule(data) {
-  return request.put('/alert/rule', data)
+  return request.post('/alert/rule/update', data)
 }
 
 export function deleteAlertRule(alertId) {

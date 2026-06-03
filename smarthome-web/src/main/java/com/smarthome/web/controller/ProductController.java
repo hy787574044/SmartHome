@@ -30,7 +30,7 @@ public class ProductController {
     }
 
     @Operation(summary = "更新产品")
-    @PutMapping
+    @PostMapping("/update")
     public R<Void> update(@RequestBody Product product) {
         productService.updateProduct(product);
         return R.ok();
@@ -74,7 +74,7 @@ public class ProductController {
     }
 
     @Operation(summary = "更新物模型")
-    @PutMapping("/model")
+    @PostMapping("/model/update")
     public R<Void> updateModel(@RequestBody ThingsModel thingsModel) {
         productService.updateThingsModel(thingsModel);
         return R.ok();

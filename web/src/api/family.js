@@ -27,10 +27,10 @@ export function removeMember(memberId) {
 
 // 修改成员角色
 export function updateMemberRole(memberId, role) {
-  return request.put(`/family/members/${memberId}/role`, { role })
+  return request.post(`/family/members/${memberId}/role`, { role })
 }
 
 // 刷新邀请码
 export function refreshInviteCode() {
-  return request.put('/family/invite-code')
+  return request.post('/family/invite-code')
 }

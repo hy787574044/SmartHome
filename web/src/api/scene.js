@@ -1,11 +1,11 @@
 import request from './request'
 
 export function createScene(data) {
-  return request.post('/scene', data)
+  return request.post('/scene/update', data)
 }
 
 export function updateScene(data) {
-  return request.put('/scene', data)
+  return request.post('/scene/update', data)
 }
 
 export function deleteScene(sceneId) {

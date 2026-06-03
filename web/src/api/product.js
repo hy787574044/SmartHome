@@ -1,11 +1,11 @@
 import request from './request'
 
 export function addProduct(data) {
-  return request.post('/product', data)
+  return request.post('/product/update', data)
 }
 
 export function updateProduct(data) {
-  return request.put('/product', data)
+  return request.post('/product/update', data)
 }
 
 export function deleteProduct(productId) {
@@ -26,11 +26,11 @@ export function listAllProducts() {
 
 // 物模型
 export function addThingsModel(data) {
-  return request.post('/product/model', data)
+  return request.post('/product/model/update', data)
 }
 
 export function updateThingsModel(data) {
-  return request.put('/product/model', data)
+  return request.post('/product/model/update', data)
 }
 
 export function deleteThingsModel(modelId) {

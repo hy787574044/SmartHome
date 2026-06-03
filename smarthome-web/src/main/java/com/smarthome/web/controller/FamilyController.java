@@ -70,6 +70,19 @@ public class FamilyController {
         return R.ok();
     }
 
+    @Operation(summary = "更新成员角色")
+    @PostMapping("/members/{memberId}/role")
+    public R<Void> updateMemberRole(@PathVariable Long memberId, @RequestBody java.util.Map<String, String> body) {
+        Long userId = getCurrentUserId();
+        Family family = familyService.getUserFamily(userId);
+        if (family == null) {
+            return R.fail("您尚未加入任何家庭");
+        }
+        String role = body.get("role");
+        familyService.updateMemberRole(family.getFamilyId(), memberId, role);
+        return R.ok();
+    }
+
     @Operation(summary = "重新生成邀请码")
     @PostMapping("/invite-code")
     public R<Family> regenerateInviteCode() {

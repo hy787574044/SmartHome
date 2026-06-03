@@ -29,7 +29,7 @@ public class SystemController {
     }
 
     @Operation(summary = "更新系统配置（批量）")
-    @PutMapping("/config")
+    @PostMapping("/config/update")
     public R<Void> updateConfigs(@RequestBody Map<String, String> configs) {
         systemConfigService.updateConfigs(configs);
         return R.ok();

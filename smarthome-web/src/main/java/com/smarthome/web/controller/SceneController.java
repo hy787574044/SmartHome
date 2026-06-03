@@ -36,7 +36,7 @@ public class SceneController {
 
     @Operation(summary = "更新场景")
     @OperationLog(module = "scene", operation = "修改")
-    @PutMapping
+    @PostMapping("/update")
     public R<Void> update(@RequestBody Scene scene) {
         sceneService.updateScene(scene);
         return R.ok();

@@ -116,6 +116,27 @@ public class FamilyService {
     }
 
     /**
+     * 更新成员角色
+     *
+     * @param familyId 家庭ID
+     * @param memberId 成员ID
+     * @param role     新角色
+     */
+    public void updateMemberRole(Long familyId, Long memberId, String role) {
+        FamilyMember member = familyMemberMapper.selectOne(
+                new LambdaQueryWrapper<FamilyMember>()
+                        .eq(FamilyMember::getFamilyId, familyId)
+                        .eq(FamilyMember::getMemberId, memberId)
+        );
+        if (member == null) {
+            throw new BusinessException("成员不存在");
+        }
+        member.setRole(role);
+        familyMemberMapper.updateById(member);
+        log.info("更新成员角色成功: familyId={}, memberId={}, role={}", familyId, memberId, role);
+    }
+
+    /**
      * 获取家庭成员列表
      *
      * @param familyId 家庭ID

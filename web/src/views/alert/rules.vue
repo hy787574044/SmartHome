@@ -8,20 +8,20 @@
     </div>
 
     <el-card shadow="hover">
-      <el-table :data="rules" stripe>
-        <el-table-column prop="alertName" label="规则名称" width="200" />
-        <el-table-column label="设备" width="180">
+      <el-table :data="rules" stripe style="width: 100%">
+        <el-table-column prop="alertName" label="规则名称" min-width="160" show-overflow-tooltip />
+        <el-table-column label="设备" min-width="140">
           <template #default="{ row }">
             {{ getDeviceName(row.deviceId) }}
           </template>
         </el-table-column>
-        <el-table-column prop="modelIdentifier" label="监测属性" width="150" />
-        <el-table-column label="条件" width="200">
+        <el-table-column prop="modelIdentifier" label="监测属性" min-width="120" />
+        <el-table-column label="条件" min-width="140">
           <template #default="{ row }">
             {{ row.operator }} {{ row.threshold }}
           </template>
         </el-table-column>
-        <el-table-column label="告警级别" width="100">
+        <el-table-column label="告警级别" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="row.alertLevel === 3 ? 'danger' : row.alertLevel === 2 ? 'warning' : 'info'" size="small">
               {{ alertLevelMap[row.alertLevel] }}
@@ -29,19 +29,21 @@
           </template>
         </el-table-column>
         <el-table-column prop="notifyType" label="通知方式" width="100" />
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="80" align="center">
           <template #default="{ row }">
             <el-switch v-model="row.enable" :active-value="1" :inactive-value="0" @change="handleToggle(row)" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" min-width="140" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button text type="primary" size="small" @click="showEditDialog(row)">编辑</el-button>
-            <el-popconfirm title="确定删除？" @confirm="handleDelete(row.alertId)">
-              <template #reference>
-                <el-button text type="danger" size="small">删除</el-button>
-              </template>
-            </el-popconfirm>
+            <div class="action-btns">
+              <el-button text type="primary" size="small" @click="showEditDialog(row)">编辑</el-button>
+              <el-popconfirm title="确定删除？" @confirm="handleDelete(row.alertId)">
+                <template #reference>
+                  <el-button text type="danger" size="small">删除</el-button>
+                </template>
+              </el-popconfirm>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -184,3 +186,14 @@ const handleDelete = async (alertId) => {
 
 onMounted(() => loadData())
 </script>
+
+<style lang="scss" scoped>
+.action-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+</style>

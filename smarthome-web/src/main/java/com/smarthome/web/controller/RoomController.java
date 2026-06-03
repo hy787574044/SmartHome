@@ -28,7 +28,7 @@ public class RoomController {
     }
 
     @Operation(summary = "更新房间")
-    @PutMapping
+    @PostMapping("/update")
     public R<Void> update(@RequestBody Room room) {
         roomService.updateRoom(room);
         return R.ok();

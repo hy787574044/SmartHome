@@ -1,11 +1,11 @@
 import request from './request'
 
 export function addRoom(data) {
-  return request.post('/room', data)
+  return request.post('/room/update', data)
 }
 
 export function updateRoom(data) {
-  return request.put('/room', data)
+  return request.post('/room/update', data)
 }
 
 export function deleteRoom(roomId) {

@@ -520,3 +520,13 @@ input:-webkit-autofill:first-line {
     }
   }
 }
+
+// ===== 表格操作按钮 =====
+.action-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}

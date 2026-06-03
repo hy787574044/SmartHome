@@ -9,11 +9,11 @@ export function getDeviceGroup(groupId) {
 }
 
 export function createDeviceGroup(data) {
-  return request.post('/deviceGroup', data)
+  return request.post('/deviceGroup/update', data)
 }
 
 export function updateDeviceGroup(data) {
-  return request.put('/deviceGroup', data)
+  return request.post('/deviceGroup/update', data)
 }
 
 export function deleteDeviceGroup(groupId) {

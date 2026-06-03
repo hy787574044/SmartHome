@@ -18,10 +18,14 @@ spring:
 
   data:
     redis:
-      host: localhost
+      host: 192.168.7.108
       port: 6379
-      password:
-      database: 0
+      password: CoOHvRWRlaBgb%Jf)R
+      database: 12
+
+# Redis 开关（设为 false 时使用本地缓存）
+redis:
+  enabled: true
 
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss

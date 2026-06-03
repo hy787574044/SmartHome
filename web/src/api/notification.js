@@ -13,19 +13,19 @@ export function addNotificationConfig(data) {
 }
 
 export function updateNotificationConfig(data) {
-  return request.put('/notification/config', data)
+  return request.post('/notification/config', data)
 }
 
 export function deleteNotificationConfig(configId) {
   return request.delete(`/notification/config/${configId}`)
 }
 
-export function testNotification(configId) {
-  return request.post(`/notification/config/${configId}/test`)
+export function testNotification(notifyType, message) {
+  return request.post('/notification/test', null, { params: { notifyType, message } })
 }
 
 export function updateQuietHours(data) {
-  return request.put('/notification/quiet-hours', data)
+  return request.post('/notification/quiet-hours', data)
 }
 
 export function getQuietHours() {

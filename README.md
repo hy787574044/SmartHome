@@ -140,7 +140,7 @@ spring:
     password: your_password
   data:
     redis:
-      host: localhost
+      host: 192.168.7.108
       port: 6379
 
 # MQTT（可选，不安装EMQX也能运行）

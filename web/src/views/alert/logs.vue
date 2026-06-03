@@ -28,34 +28,36 @@
     </el-card>
 
     <el-card shadow="hover">
-      <el-table :data="logs" stripe>
-        <el-table-column label="告警级别" width="100">
+      <el-table :data="logs" stripe style="width: 100%">
+        <el-table-column label="告警级别" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="row.alertLevel === 3 ? 'danger' : row.alertLevel === 2 ? 'warning' : 'info'" size="small">
               {{ alertLevelMap[row.alertLevel] }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="deviceName" label="设备" width="150" />
-        <el-table-column prop="alertMessage" label="告警消息" min-width="300" />
-        <el-table-column prop="alertValue" label="告警值" width="100" />
-        <el-table-column label="状态" width="100">
+        <el-table-column prop="deviceName" label="设备" min-width="120" />
+        <el-table-column prop="alertMessage" label="告警消息" min-width="250" show-overflow-tooltip />
+        <el-table-column prop="alertValue" label="告警值" width="90" />
+        <el-table-column label="状态" width="80" align="center">
           <template #default="{ row }">
             <el-tag :type="statusTagType[row.status]" size="small">
               {{ statusMap[row.status] }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="告警时间" width="180" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column prop="createTime" label="告警时间" min-width="160" />
+        <el-table-column label="操作" min-width="140" fixed="right" align="center">
           <template #default="{ row }">
-            <template v-if="row.status === 1">
-              <el-button text type="success" size="small" @click="handleAlert(row.logId)">处理</el-button>
-              <el-button text type="info" size="small" @click="ignoreAlertLog(row.logId)">忽略</el-button>
-            </template>
-            <span v-else style="color: #94a3b8; font-size: 12px">
-              {{ row.handleRemark || '已处理' }}
-            </span>
+            <div class="action-btns">
+              <template v-if="row.status === 1">
+                <el-button text type="success" size="small" @click="handleAlert(row.logId)">处理</el-button>
+                <el-button text type="info" size="small" @click="ignoreAlertLog(row.logId)">忽略</el-button>
+              </template>
+              <span v-else style="color: #94a3b8; font-size: 12px">
+                {{ row.handleRemark || '已处理' }}
+              </span>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -106,3 +108,14 @@ const ignoreAlertLog = async (logId) => {
 
 onMounted(() => loadLogs())
 </script>
+
+<style lang="scss" scoped>
+.action-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+</style>

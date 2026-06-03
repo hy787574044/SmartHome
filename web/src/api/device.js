@@ -2,11 +2,11 @@ import request from './request'
 
 // 设备管理
 export function addDevice(data) {
-  return request.post('/device', data)
+  return request.post('/device/update', data)
 }
 
 export function updateDevice(data) {
-  return request.put('/device', data)
+  return request.post('/device/update', data)
 }
 
 export function deleteDevice(deviceId) {

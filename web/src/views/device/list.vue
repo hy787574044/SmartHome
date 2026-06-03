@@ -35,39 +35,42 @@
     <!-- 设备列表 -->
     <el-card shadow="hover">
       <el-table :data="devices" stripe style="width: 100%">
-        <el-table-column prop="deviceName" label="设备名称" width="180" />
-        <el-table-column prop="serialNumber" label="序列号" width="200" />
-        <el-table-column label="所属产品" width="150">
+        <el-table-column prop="deviceName" label="设备名称" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="serialNumber" label="序列号" min-width="180" show-overflow-tooltip />
+        <el-table-column label="所属产品" min-width="120">
           <template #default="{ row }">
             {{ getProductName(row.productId) }}
           </template>
         </el-table-column>
-        <el-table-column label="所属房间" width="120">
+        <el-table-column label="所属房间" min-width="100">
           <template #default="{ row }">
             {{ getRoomName(row.roomId) }}
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="80" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 3 ? 'success' : row.status === 4 ? 'info' : 'warning'" size="small">
               {{ statusMap[row.status] }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="最后上线" width="180">
+        <el-table-column label="最后上线" min-width="160">
           <template #default="{ row }">
             {{ row.lastOnlineTime || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" min-width="240" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button text type="primary" size="small" @click="showControlDialog(row)">控制</el-button>
-            <el-button text type="primary" size="small" @click="showEditDialog(row)">编辑</el-button>
-            <el-popconfirm title="确定删除该设备？" @confirm="handleDelete(row.deviceId)">
-              <template #reference>
-                <el-button text type="danger" size="small">删除</el-button>
-              </template>
-            </el-popconfirm>
+            <div class="action-btns">
+              <el-button text type="success" size="small" @click="$router.push(`/device/detail/${row.deviceId}`)">详情</el-button>
+              <el-button text type="primary" size="small" @click="showControlDialog(row)">控制</el-button>
+              <el-button text type="primary" size="small" @click="showEditDialog(row)">编辑</el-button>
+              <el-popconfirm title="确定删除该设备？" @confirm="handleDelete(row.deviceId)">
+                <template #reference>
+                  <el-button text type="danger" size="small">删除</el-button>
+                </template>
+              </el-popconfirm>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -238,6 +241,15 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
+.action-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+
 .control-item {
   display: flex;
   justify-content: space-between;

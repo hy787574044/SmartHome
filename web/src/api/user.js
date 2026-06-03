@@ -7,15 +7,15 @@ export function getProfile() {
 
 // 更新用户资料
 export function updateProfile(data) {
-  return request.put('/user/profile', data)
+  return request.post('/user/profile/update', data)
 }
 
 // 修改密码
 export function updatePassword(data) {
-  return request.put('/user/password', data)
+  return request.post('/user/password/update', data)
 }
 
 // 更新头像
 export function updateAvatar(avatar) {
-  return request.put('/user/avatar', { avatar })
+  return request.post('/user/avatar/update', { avatar })
 }

@@ -7,7 +7,7 @@ export function listConfigs() {
 
 // 更新系统配置（批量）
 export function updateConfigs(data) {
-  return request.put('/system/config', data)
+  return request.post('/system/config/update', data)
 }
 
 // 获取系统信息

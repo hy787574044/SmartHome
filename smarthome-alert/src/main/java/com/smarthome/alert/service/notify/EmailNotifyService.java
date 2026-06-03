@@ -6,8 +6,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.smarthome.model.entity.Device;
 import com.smarthome.model.entity.NotificationConfig;
 import com.smarthome.model.mapper.NotificationConfigMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -17,24 +18,31 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 邮件通知服务
- * 通过 JavaMailSender 发送告警邮件
+ * 邮件通知服务（仅在 JavaMailSender 可用时启用）
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
+@ConditionalOnBean(JavaMailSender.class)
 public class EmailNotifyService implements NotifyService {
 
-    private final NotificationConfigMapper notificationConfigMapper;
-    private final JavaMailSender mailSender;
+    @Autowired
+    private NotificationConfigMapper notificationConfigMapper;
+
+    @Autowired
+    private JavaMailSender mailSender;
 
     @Override
     public boolean supports(String notifyType) {
-        return "email".equals(notifyType);
+        return "email".equals(notifyType) && mailSender != null;
     }
 
     @Override
     public void send(Long userId, Device device, String message, int alertLevel) {
+        if (mailSender == null) {
+            log.warn("邮件服务未配置，无法发送邮件");
+            return;
+        }
+
         NotificationConfig config = notificationConfigMapper.selectOne(
                 new LambdaQueryWrapper<NotificationConfig>()
                         .eq(NotificationConfig::getUserId, userId)
@@ -47,7 +55,6 @@ public class EmailNotifyService implements NotifyService {
             return;
         }
 
-        // 解析邮箱地址
         String emailAddress = parseEmailAddress(config.getConfig());
         if (emailAddress == null || emailAddress.isEmpty()) {
             log.warn("用户 {} 的邮件地址为空", userId);
@@ -93,9 +100,6 @@ public class EmailNotifyService implements NotifyService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 从 JSON 配置中解析邮箱地址
-     */
     private String parseEmailAddress(String configJson) {
         try {
             JSONObject json = JSONUtil.parseObj(configJson);

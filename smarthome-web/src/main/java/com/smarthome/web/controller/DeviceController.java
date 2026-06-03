@@ -41,7 +41,7 @@ public class DeviceController {
 
     @Operation(summary = "更新设备")
     @OperationLog(module = "device", operation = "修改")
-    @PutMapping
+    @PostMapping("/update")
     public R<Void> update(@RequestBody Device device) {
         deviceService.updateDevice(device);
         return R.ok();

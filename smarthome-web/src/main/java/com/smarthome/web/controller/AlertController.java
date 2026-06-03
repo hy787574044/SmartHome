@@ -43,7 +43,7 @@ public class AlertController {
 
     @Operation(summary = "更新告警规则")
     @OperationLog(module = "alert", operation = "修改")
-    @PutMapping("/rule")
+    @PostMapping("/rule/update")
     public R<Void> updateRule(@RequestBody AlertRule rule) {
         alertService.updateAlertRule(rule);
         return R.ok();

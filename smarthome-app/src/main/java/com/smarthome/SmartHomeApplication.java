@@ -3,12 +3,17 @@ package com.smarthome;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * 全屋智能控制系统 - 启动类
  */
-@SpringBootApplication(scanBasePackages = "com.smarthome")
+@SpringBootApplication(
+    scanBasePackages = "com.smarthome",
+    exclude = {RedisAutoConfiguration.class, RedisRepositoriesAutoConfiguration.class}
+)
 @MapperScan("com.smarthome.model.mapper")
 @EnableScheduling
 public class SmartHomeApplication {

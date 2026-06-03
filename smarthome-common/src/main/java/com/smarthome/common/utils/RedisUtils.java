@@ -1,87 +1,167 @@
 package com.smarthome.common.utils;
 
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Redis 工具类
+ * Redis 工具类（Redis 不可用时自动降级为本地缓存）
  */
+@Slf4j
 @Component
-@RequiredArgsConstructor
 public class RedisUtils {
 
-    private final StringRedisTemplate redisTemplate;
+    @Autowired(required = false)
+    private StringRedisTemplate redisTemplate;
+
+    /** 本地缓存（Redis 不可用时使用） */
+    private final Map<String, String> localCache = new ConcurrentHashMap<>();
+    private final Map<String, Map<Object, Object>> localHashCache = new ConcurrentHashMap<>();
+    private volatile boolean redisAvailable = true;
 
     /**
-     * 设置缓存
+     * 检查 Redis 是否可用
      */
+    private boolean isRedisAvailable() {
+        if (redisTemplate == null) {
+            return false;
+        }
+        if (!redisAvailable) {
+            return false;
+        }
+        try {
+            redisTemplate.hasKey("test:ping");
+            return true;
+        } catch (Exception e) {
+            if (redisAvailable) {
+                log.warn("Redis 不可用，降级为本地缓存模式: {}", e.getMessage());
+                redisAvailable = false;
+            }
+            return false;
+        }
+    }
+
     public void set(String key, String value) {
-        redisTemplate.opsForValue().set(key, value);
+        if (isRedisAvailable()) {
+            try {
+                redisTemplate.opsForValue().set(key, value);
+                return;
+            } catch (Exception e) {
+                log.debug("Redis set 失败，使用本地缓存");
+            }
+        }
+        localCache.put(key, value);
     }
 
-    /**
-     * 设置缓存（带过期时间）
-     */
     public void set(String key, String value, long timeout, TimeUnit unit) {
-        redisTemplate.opsForValue().set(key, value, timeout, unit);
+        if (isRedisAvailable()) {
+            try {
+                redisTemplate.opsForValue().set(key, value, timeout, unit);
+                return;
+            } catch (Exception e) {
+                log.debug("Redis set 失败，使用本地缓存");
+            }
+        }
+        localCache.put(key, value);
     }
 
-    /**
-     * 获取缓存
-     */
     public String get(String key) {
-        return redisTemplate.opsForValue().get(key);
+        if (isRedisAvailable()) {
+            try {
+                return redisTemplate.opsForValue().get(key);
+            } catch (Exception e) {
+                log.debug("Redis get 失败，使用本地缓存");
+            }
+        }
+        return localCache.get(key);
     }
 
-    /**
-     * 删除缓存
-     */
     public Boolean delete(String key) {
-        return redisTemplate.delete(key);
+        if (isRedisAvailable()) {
+            try {
+                return redisTemplate.delete(key);
+            } catch (Exception e) {
+                log.debug("Redis delete 失败，使用本地缓存");
+            }
+        }
+        return localCache.remove(key) != null;
     }
 
-    /**
-     * 判断 key 是否存在
-     */
     public Boolean hasKey(String key) {
-        return redisTemplate.hasKey(key);
+        if (isRedisAvailable()) {
+            try {
+                return redisTemplate.hasKey(key);
+            } catch (Exception e) {
+                log.debug("Redis hasKey 失败，使用本地缓存");
+            }
+        }
+        return localCache.containsKey(key) || localHashCache.containsKey(key);
     }
 
-    /**
-     * 设置 Hash
-     */
+    @SuppressWarnings("unchecked")
     public void hSet(String key, String field, String value) {
-        redisTemplate.opsForHash().put(key, field, value);
+        if (isRedisAvailable()) {
+            try {
+                redisTemplate.opsForHash().put(key, field, value);
+                return;
+            } catch (Exception e) {
+                log.debug("Redis hSet 失败，使用本地缓存");
+            }
+        }
+        localHashCache.computeIfAbsent(key, k -> new ConcurrentHashMap<>()).put(field, value);
     }
 
-    /**
-     * 获取 Hash
-     */
     public Object hGet(String key, String field) {
-        return redisTemplate.opsForHash().get(key, field);
+        if (isRedisAvailable()) {
+            try {
+                return redisTemplate.opsForHash().get(key, field);
+            } catch (Exception e) {
+                log.debug("Redis hGet 失败，使用本地缓存");
+            }
+        }
+        Map<Object, Object> hash = localHashCache.get(key);
+        return hash != null ? hash.get(field) : null;
     }
 
-    /**
-     * 获取整个 Hash
-     */
     public Object hGetAll(String key) {
-        return redisTemplate.opsForHash().entries(key);
+        if (isRedisAvailable()) {
+            try {
+                return redisTemplate.opsForHash().entries(key);
+            } catch (Exception e) {
+                log.debug("Redis hGetAll 失败，使用本地缓存");
+            }
+        }
+        return localHashCache.getOrDefault(key, new ConcurrentHashMap<>());
     }
 
-    /**
-     * 删除 Hash 字段
-     */
     public Long hDelete(String key, String field) {
-        return redisTemplate.opsForHash().delete(key, field);
+        if (isRedisAvailable()) {
+            try {
+                return redisTemplate.opsForHash().delete(key, field);
+            } catch (Exception e) {
+                log.debug("Redis hDelete 失败，使用本地缓存");
+            }
+        }
+        Map<Object, Object> hash = localHashCache.get(key);
+        if (hash != null) {
+            return hash.remove(field) != null ? 1L : 0L;
+        }
+        return 0L;
     }
 
-    /**
-     * 设置过期时间
-     */
     public Boolean expire(String key, long timeout, TimeUnit unit) {
-        return redisTemplate.expire(key, timeout, unit);
+        if (isRedisAvailable()) {
+            try {
+                return redisTemplate.expire(key, timeout, unit);
+            } catch (Exception e) {
+                log.debug("Redis expire 失败");
+            }
+        }
+        return true;
     }
 }

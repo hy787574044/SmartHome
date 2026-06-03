@@ -13,42 +13,44 @@
     </div>
 
     <el-card shadow="hover">
-      <el-table :data="scenes" stripe>
-        <el-table-column prop="sceneName" label="场景名称" width="200" />
-        <el-table-column label="类型" width="100">
+      <el-table :data="scenes" stripe style="width: 100%">
+        <el-table-column prop="sceneName" label="场景名称" min-width="160" show-overflow-tooltip />
+        <el-table-column label="类型" width="80" align="center">
           <template #default="{ row }">
             <el-tag :type="row.sceneType === 1 ? '' : 'success'" size="small">
               {{ row.sceneType === 1 ? '手动' : '自动' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="条件关系" width="100">
+        <el-table-column label="条件关系" min-width="100">
           <template #default="{ row }">
             {{ row.conditionType === 2 ? '全部满足' : '任一满足' }}
           </template>
         </el-table-column>
-        <el-table-column label="静默期" width="100">
+        <el-table-column label="静默期" min-width="90">
           <template #default="{ row }">
             {{ row.silentPeriod ? `${row.silentPeriod}分钟` : '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="80" align="center">
           <template #default="{ row }">
             <el-switch v-model="row.enable" :active-value="1" :inactive-value="0" @change="handleToggle(row)" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="380" fixed="right">
+        <el-table-column label="操作" min-width="360" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button text type="success" size="small" @click="handleExecute(row)">执行</el-button>
-            <el-button text type="primary" size="small" @click="showDetailDialog(row)">详情</el-button>
-            <el-button text type="primary" size="small" @click="showEditDialog(row)">编辑</el-button>
-            <el-button text type="warning" size="small" @click="handleCopy(row)">复制</el-button>
-            <el-button text type="info" size="small" @click="showLogDialog(row)">日志</el-button>
-            <el-popconfirm title="确定删除该场景？" @confirm="handleDelete(row.sceneId)">
-              <template #reference>
-                <el-button text type="danger" size="small">删除</el-button>
-              </template>
-            </el-popconfirm>
+            <div class="action-btns">
+              <el-button text type="success" size="small" @click="handleExecute(row)">执行</el-button>
+              <el-button text type="primary" size="small" @click="showDetailDialog(row)">详情</el-button>
+              <el-button text type="primary" size="small" @click="showEditDialog(row)">编辑</el-button>
+              <el-button text type="warning" size="small" @click="handleCopy(row)">复制</el-button>
+              <el-button text type="info" size="small" @click="showLogDialog(row)">日志</el-button>
+              <el-popconfirm title="确定删除该场景？" @confirm="handleDelete(row.sceneId)">
+                <template #reference>
+                  <el-button text type="danger" size="small">删除</el-button>
+                </template>
+              </el-popconfirm>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -444,6 +446,15 @@ onMounted(async () => {
 .header-actions {
   display: flex;
   gap: 12px;
+}
+
+.action-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
 }
 
 .trigger-item, .action-item {

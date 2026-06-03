@@ -1,24 +1,18 @@
 package com.smarthome.web.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.smarthome.common.exception.BusinessException;
 import com.smarthome.common.result.R;
-import com.smarthome.device.service.DeviceService;
 import com.smarthome.model.entity.DeviceGroup;
 import com.smarthome.model.entity.DeviceGroupDevice;
-import com.smarthome.model.mapper.DeviceGroupDeviceMapper;
-import com.smarthome.model.mapper.DeviceGroupMapper;
+import com.smarthome.device.service.DeviceGroupService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * 设备分组管理 API
+ * 设备分组 API
  */
 @Tag(name = "设备分组")
 @RestController
@@ -26,106 +20,60 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DeviceGroupController {
 
-    private final DeviceGroupMapper deviceGroupMapper;
-    private final DeviceGroupDeviceMapper deviceGroupDeviceMapper;
-    private final DeviceService deviceService;
+    private final DeviceGroupService deviceGroupService;
 
-    @Operation(summary = "添加分组")
+    @Operation(summary = "添加设备分组")
     @PostMapping
     public R<DeviceGroup> add(@RequestBody DeviceGroup group) {
-        deviceGroupMapper.insert(group);
-        return R.ok(group);
+        return R.ok(deviceGroupService.add(group));
     }
 
-    @Operation(summary = "更新分组")
-    @PutMapping
+    @Operation(summary = "更新设备分组")
+    @PostMapping("/update")
     public R<Void> update(@RequestBody DeviceGroup group) {
-        deviceGroupMapper.updateById(group);
+        deviceGroupService.update(group);
         return R.ok();
     }
 
-    @Operation(summary = "删除分组")
+    @Operation(summary = "删除设备分组")
     @DeleteMapping("/{groupId}")
-    @Transactional(rollbackFor = Exception.class)
     public R<Void> delete(@PathVariable Long groupId) {
-        deviceGroupMapper.deleteById(groupId);
-        deviceGroupDeviceMapper.delete(
-                new LambdaQueryWrapper<DeviceGroupDevice>().eq(DeviceGroupDevice::getGroupId, groupId));
+        deviceGroupService.delete(groupId);
         return R.ok();
     }
 
-    @Operation(summary = "获取分组详情")
-    @GetMapping("/{groupId}")
-    public R<DeviceGroup> getById(@PathVariable Long groupId) {
-        return R.ok(deviceGroupMapper.selectById(groupId));
-    }
-
-    @Operation(summary = "获取所有分组")
+    @Operation(summary = "获取设备分组列表")
     @GetMapping("/list")
     public R<List<DeviceGroup>> list() {
-        return R.ok(deviceGroupMapper.selectList(
-                new LambdaQueryWrapper<DeviceGroup>().orderByAsc(DeviceGroup::getSortOrder)));
+        return R.ok(deviceGroupService.listAll());
     }
 
-    @Operation(summary = "获取分组下的设备ID列表")
+    @Operation(summary = "获取分组下的设备")
     @GetMapping("/{groupId}/devices")
     public R<List<DeviceGroupDevice>> listDevices(@PathVariable Long groupId) {
-        return R.ok(deviceGroupDeviceMapper.selectList(
-                new LambdaQueryWrapper<DeviceGroupDevice>().eq(DeviceGroupDevice::getGroupId, groupId)));
+        return R.ok(deviceGroupService.listDevices(groupId));
     }
 
-    @Operation(summary = "向分组添加设备")
+    @Operation(summary = "添加设备到分组")
     @PostMapping("/{groupId}/devices")
-    @Transactional(rollbackFor = Exception.class)
-    public R<Void> addDevices(@PathVariable Long groupId, @RequestBody List<Long> deviceIds) {
-        for (Long deviceId : deviceIds) {
-            long count = deviceGroupDeviceMapper.selectCount(
-                    new LambdaQueryWrapper<DeviceGroupDevice>()
-                            .eq(DeviceGroupDevice::getGroupId, groupId)
-                            .eq(DeviceGroupDevice::getDeviceId, deviceId));
-            if (count == 0) {
-                DeviceGroupDevice link = new DeviceGroupDevice();
-                link.setGroupId(groupId);
-                link.setDeviceId(deviceId);
-                deviceGroupDeviceMapper.insert(link);
-            }
-        }
+    public R<Void> addDevice(@PathVariable Long groupId, @RequestBody List<Long> deviceIds) {
+        deviceGroupService.addDevices(groupId, deviceIds);
         return R.ok();
     }
 
     @Operation(summary = "从分组移除设备")
     @DeleteMapping("/{groupId}/devices/{deviceId}")
     public R<Void> removeDevice(@PathVariable Long groupId, @PathVariable Long deviceId) {
-        deviceGroupDeviceMapper.delete(
-                new LambdaQueryWrapper<DeviceGroupDevice>()
-                        .eq(DeviceGroupDevice::getGroupId, groupId)
-                        .eq(DeviceGroupDevice::getDeviceId, deviceId));
+        deviceGroupService.removeDevice(groupId, deviceId);
         return R.ok();
     }
 
-    @Operation(summary = "批量控制分组内设备")
+    @Operation(summary = "批量控制分组设备")
     @PostMapping("/{groupId}/control")
-    public R<Void> controlGroup(@PathVariable Long groupId, @RequestBody GroupControlRequest request) {
-        DeviceGroup group = deviceGroupMapper.selectById(groupId);
-        if (group == null) {
-            throw new BusinessException("分组不存在");
-        }
-        List<DeviceGroupDevice> links = deviceGroupDeviceMapper.selectList(
-                new LambdaQueryWrapper<DeviceGroupDevice>().eq(DeviceGroupDevice::getGroupId, groupId));
-        for (DeviceGroupDevice link : links) {
-            deviceService.controlDevice(link.getDeviceId(), request.getIdentifier(), request.getValue());
-        }
+    public R<Void> controlGroup(@PathVariable Long groupId,
+                                @RequestParam String identifier,
+                                @RequestParam String value) {
+        deviceGroupService.controlGroup(groupId, identifier, value);
         return R.ok();
-    }
-
-    /**
-     * 分组控制请求体
-     */
-    @lombok.Data
-    public static class GroupControlRequest {
-        /** 物模型标识符 */
-        private String identifier;
-        /** 控制值 */
-        private String value;
     }
 }
