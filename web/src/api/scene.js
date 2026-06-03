@@ -31,3 +31,19 @@ export function listActions(sceneId) {
 export function executeScene(sceneId) {
   return request.post(`/scene/${sceneId}/execute`)
 }
+
+export function getSceneTemplates() {
+  return request.get('/scene/templates')
+}
+
+export function createSceneFromTemplate(templateId, data) {
+  return request.post(`/scene/templates/${templateId}/create`, data)
+}
+
+export function copyScene(sceneId) {
+  return request.post(`/scene/${sceneId}/copy`)
+}
+
+export function getSceneLogs(params) {
+  return request.get('/scene/logs', { params })
+}

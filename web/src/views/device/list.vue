@@ -251,7 +251,7 @@ onMounted(async () => {
 
   .control-label {
     font-size: 14px;
-    color: #303133;
+    color: #f0f4f8;
   }
 
   .control-action {

@@ -8,6 +8,7 @@ import com.smarthome.device.service.DeviceService;
 import com.smarthome.model.dto.DevicePropertyDTO;
 import com.smarthome.model.entity.*;
 import com.smarthome.model.mapper.SceneActionMapper;
+import com.smarthome.model.mapper.SceneLogMapper;
 import com.smarthome.model.mapper.SceneMapper;
 import com.smarthome.model.mapper.SceneTriggerMapper;
 import com.smarthome.mqtt.service.MqttSendService;
@@ -17,9 +18,11 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import java.time.LocalDateTime;
+import java.util.*;
 
 /**
  * 场景联动服务
@@ -32,6 +35,7 @@ public class SceneService {
     private final SceneMapper sceneMapper;
     private final SceneTriggerMapper triggerMapper;
     private final SceneActionMapper actionMapper;
+    private final SceneLogMapper sceneLogMapper;
     private final DeviceService deviceService;
     private final MqttSendService mqttSendService;
     private final RedisUtils redisUtils;
@@ -150,6 +154,165 @@ public class SceneService {
             throw new BusinessException("场景未启用");
         }
         executeActions(scene);
+    }
+
+    /**
+     * 复制场景（含触发条件和执行动作）
+     */
+    public Scene copyScene(Long sceneId) {
+        Scene source = sceneMapper.selectById(sceneId);
+        if (source == null) {
+            throw new BusinessException("场景不存在");
+        }
+
+        // 复制场景基本信息
+        Scene copy = new Scene();
+        copy.setSceneName(source.getSceneName() + " - 副本");
+        copy.setSceneType(source.getSceneType());
+        copy.setEnable(0); // 副本默认禁用
+        copy.setConditionType(source.getConditionType());
+        copy.setExecuteMode(source.getExecuteMode());
+        copy.setDelaySeconds(source.getDelaySeconds());
+        copy.setSilentPeriod(source.getSilentPeriod());
+        copy.setIcon(source.getIcon());
+        sceneMapper.insert(copy);
+
+        // 复制触发条件
+        List<SceneTrigger> triggers = listTriggers(sceneId);
+        for (SceneTrigger trigger : triggers) {
+            SceneTrigger triggerCopy = new SceneTrigger();
+            triggerCopy.setSceneId(copy.getSceneId());
+            triggerCopy.setTriggerType(trigger.getTriggerType());
+            triggerCopy.setDeviceId(trigger.getDeviceId());
+            triggerCopy.setModelIdentifier(trigger.getModelIdentifier());
+            triggerCopy.setOperator(trigger.getOperator());
+            triggerCopy.setValue(trigger.getValue());
+            triggerCopy.setCronExpression(trigger.getCronExpression());
+            triggerMapper.insert(triggerCopy);
+        }
+
+        // 复制执行动作
+        List<SceneAction> actions = listActions(sceneId);
+        for (SceneAction action : actions) {
+            SceneAction actionCopy = new SceneAction();
+            actionCopy.setSceneId(copy.getSceneId());
+            actionCopy.setActionType(action.getActionType());
+            actionCopy.setDeviceId(action.getDeviceId());
+            actionCopy.setModelIdentifier(action.getModelIdentifier());
+            actionCopy.setValue(action.getValue());
+            actionCopy.setDelaySeconds(action.getDelaySeconds());
+            actionCopy.setSortOrder(action.getSortOrder());
+            actionMapper.insert(actionCopy);
+        }
+
+        log.info("场景已复制: {} -> {}", source.getSceneName(), copy.getSceneName());
+        return copy;
+    }
+
+    /**
+     * 获取场景执行日志
+     */
+    public List<SceneLog> listSceneLogs(Long sceneId) {
+        return sceneLogMapper.selectList(
+                new LambdaQueryWrapper<SceneLog>()
+                        .eq(SceneLog::getSceneId, sceneId)
+                        .orderByDesc(SceneLog::getExecuteTime)
+        );
+    }
+
+    /**
+     * 获取场景模板列表
+     */
+    public List<Map<String, Object>> listSceneTemplates() {
+        List<Map<String, Object>> templates = new ArrayList<>();
+
+        // 回家模式
+        Map<String, Object> homeMode = new LinkedHashMap<>();
+        homeMode.put("templateId", 1);
+        homeMode.put("templateName", "回家模式");
+        homeMode.put("icon", "home");
+        homeMode.put("description", "开灯+开空调+开窗帘");
+        homeMode.put("actions", Arrays.asList(
+                makeAction("light", "开灯", "switch", "true"),
+                makeAction("air_conditioner", "开空调", "switch", "true"),
+                makeAction("curtain", "开窗帘", "switch", "true")
+        ));
+        templates.add(homeMode);
+
+        // 离家模式
+        Map<String, Object> leaveMode = new LinkedHashMap<>();
+        leaveMode.put("templateId", 2);
+        leaveMode.put("templateName", "离家模式");
+        leaveMode.put("icon", "leave");
+        leaveMode.put("description", "关所有灯+关空调+关窗帘+布防");
+        leaveMode.put("actions", Arrays.asList(
+                makeAction("light", "关所有灯", "switch", "false"),
+                makeAction("air_conditioner", "关空调", "switch", "false"),
+                makeAction("curtain", "关窗帘", "switch", "false"),
+                makeAction("security", "布防", "armed", "true")
+        ));
+        templates.add(leaveMode);
+
+        // 睡眠模式
+        Map<String, Object> sleepMode = new LinkedHashMap<>();
+        sleepMode.put("templateId", 3);
+        sleepMode.put("templateName", "睡眠模式");
+        sleepMode.put("icon", "sleep");
+        sleepMode.put("description", "关灯+关窗帘+空调调至26度");
+        sleepMode.put("actions", Arrays.asList(
+                makeAction("light", "关灯", "switch", "false"),
+                makeAction("curtain", "关窗帘", "switch", "false"),
+                makeAction("air_conditioner", "空调调至26度", "temperature", "26")
+        ));
+        templates.add(sleepMode);
+
+        // 起床模式
+        Map<String, Object> wakeupMode = new LinkedHashMap<>();
+        wakeupMode.put("templateId", 4);
+        wakeupMode.put("templateName", "起床模式");
+        wakeupMode.put("icon", "wakeup");
+        wakeupMode.put("description", "开窗帘+开灯（亮度50%）");
+        wakeupMode.put("actions", Arrays.asList(
+                makeAction("curtain", "开窗帘", "switch", "true"),
+                makeAction("light", "开灯（亮度50%）", "brightness", "50")
+        ));
+        templates.add(wakeupMode);
+
+        // 影院模式
+        Map<String, Object> cinemaMode = new LinkedHashMap<>();
+        cinemaMode.put("templateId", 5);
+        cinemaMode.put("templateName", "影院模式");
+        cinemaMode.put("icon", "cinema");
+        cinemaMode.put("description", "关灯+关窗帘+开电视");
+        cinemaMode.put("actions", Arrays.asList(
+                makeAction("light", "关灯", "switch", "false"),
+                makeAction("curtain", "关窗帘", "switch", "false"),
+                makeAction("tv", "开电视", "switch", "true")
+        ));
+        templates.add(cinemaMode);
+
+        // 阅读模式
+        Map<String, Object> readMode = new LinkedHashMap<>();
+        readMode.put("templateId", 6);
+        readMode.put("templateName", "阅读模式");
+        readMode.put("icon", "read");
+        readMode.put("description", "开台灯（亮度100%）+关其他灯");
+        readMode.put("actions", Arrays.asList(
+                makeAction("desk_lamp", "开台灯（亮度100%）", "brightness", "100"),
+                makeAction("light", "关其他灯", "switch", "false")
+        ));
+        templates.add(readMode);
+
+        return templates;
+    }
+
+    private Map<String, String> makeAction(String deviceType, String action, String identifier, String value) {
+        Map<String, String> map = new java.util.HashMap<>();
+        map.put("deviceType", deviceType);
+        map.put("action", action);
+        map.put("identifier", identifier);
+        map.put("value", value);
+        return map;
     }
 
     /**

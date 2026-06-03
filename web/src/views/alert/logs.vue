@@ -53,7 +53,7 @@
               <el-button text type="success" size="small" @click="handleAlert(row.logId)">处理</el-button>
               <el-button text type="info" size="small" @click="ignoreAlertLog(row.logId)">忽略</el-button>
             </template>
-            <span v-else style="color: #909399; font-size: 12px">
+            <span v-else style="color: #94a3b8; font-size: 12px">
               {{ row.handleRemark || '已处理' }}
             </span>
           </template>

@@ -2,9 +2,14 @@
   <div class="page-container">
     <div class="page-header">
       <h2>场景联动</h2>
-      <el-button type="primary" @click="showAddDialog">
-        <el-icon><Plus /></el-icon> 创建场景
-      </el-button>
+      <div class="header-actions">
+        <el-button @click="$router.push('/scene/templates')">
+          <el-icon><Connection /></el-icon> 从模板创建
+        </el-button>
+        <el-button type="primary" @click="showAddDialog">
+          <el-icon><Plus /></el-icon> 创建场景
+        </el-button>
+      </div>
     </div>
 
     <el-card shadow="hover">
@@ -32,11 +37,13 @@
             <el-switch v-model="row.enable" :active-value="1" :inactive-value="0" @change="handleToggle(row)" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="300" fixed="right">
+        <el-table-column label="操作" width="380" fixed="right">
           <template #default="{ row }">
             <el-button text type="success" size="small" @click="handleExecute(row)">执行</el-button>
             <el-button text type="primary" size="small" @click="showDetailDialog(row)">详情</el-button>
             <el-button text type="primary" size="small" @click="showEditDialog(row)">编辑</el-button>
+            <el-button text type="warning" size="small" @click="handleCopy(row)">复制</el-button>
+            <el-button text type="info" size="small" @click="showLogDialog(row)">日志</el-button>
             <el-popconfirm title="确定删除该场景？" @confirm="handleDelete(row.sceneId)">
               <template #reference>
                 <el-button text type="danger" size="small">删除</el-button>
@@ -67,7 +74,7 @@
         </el-form-item>
         <el-form-item label="静默期">
           <el-input-number v-model="form.scene.silentPeriod" :min="0" :max="1440" />
-          <span style="margin-left: 8px; color: #909399">分钟（防止重复触发）</span>
+          <span style="margin-left: 8px; color: #94a3b8">分钟（防止重复触发）</span>
         </el-form-item>
 
         <!-- 触发条件 -->
@@ -177,16 +184,45 @@
         </el-table-column>
       </el-table>
     </el-dialog>
+
+    <!-- 执行日志对话框 -->
+    <el-dialog v-model="logVisible" :title="`执行日志 - ${logScene?.sceneName}`" width="750px">
+      <el-table :data="sceneLogs" stripe size="small" v-loading="logLoading">
+        <el-table-column prop="executeTime" label="执行时间" width="180">
+          <template #default="{ row }">
+            {{ row.executeTime || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="触发方式" width="100">
+          <template #default="{ row }">
+            {{ row.triggerType === 1 ? '手动' : row.triggerType === 2 ? '定时' : '自动' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="执行结果" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+              {{ row.status === 1 ? '成功' : '失败' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="message" label="详情" show-overflow-tooltip />
+      </el-table>
+      <div v-if="sceneLogs.length === 0 && !logLoading" class="log-empty">
+        <el-empty description="暂无执行记录" :image-size="60" />
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { listScenes, createScene, updateScene, deleteScene, executeScene, listTriggers, listActions } from '@/api/scene'
+import { listScenes, createScene, updateScene, deleteScene, executeScene, listTriggers, listActions, copyScene, getSceneLogs } from '@/api/scene'
 import { listDevices } from '@/api/device'
 import { listThingsModels } from '@/api/product'
 
+const route = useRoute()
 const scenes = ref([])
 const allDevices = ref([])
 const deviceModelCache = ref({})
@@ -203,6 +239,11 @@ const detailVisible = ref(false)
 const detailScene = ref(null)
 const detailTriggers = ref([])
 const detailActions = ref([])
+
+const logVisible = ref(false)
+const logScene = ref(null)
+const sceneLogs = ref([])
+const logLoading = ref(false)
 
 const triggerTypeMap = { 1: '设备触发', 2: '定时触发', 3: '条件触发' }
 
@@ -259,6 +300,41 @@ const showAddDialog = () => {
   dialogVisible.value = true
 }
 
+// Open create dialog prefilled from template data
+const showTemplateDialog = (template) => {
+  isEdit.value = false
+  form.scene = {
+    sceneName: template.templateName || '',
+    sceneType: 1,
+    conditionType: 1,
+    enable: 1,
+    silentPeriod: 0,
+  }
+  form.triggers = (template.triggers || []).map((t) => ({
+    triggerType: t.triggerType || 1,
+    deviceId: t.deviceId || null,
+    modelIdentifier: t.modelIdentifier || '',
+    operator: t.operator || '=',
+    value: t.value || '',
+    cronExpression: t.cronExpression || '',
+  }))
+  form.actions = (template.actions || []).map((a) => ({
+    actionType: a.actionType || 1,
+    deviceId: a.deviceId || null,
+    modelIdentifier: a.modelIdentifier || '',
+    value: a.value || '',
+    delaySeconds: a.delaySeconds || 0,
+  }))
+  // Ensure at least one trigger and one action
+  if (form.triggers.length === 0) {
+    form.triggers.push({ triggerType: 1, deviceId: null, modelIdentifier: '', operator: '=', value: '', cronExpression: '' })
+  }
+  if (form.actions.length === 0) {
+    form.actions.push({ actionType: 1, deviceId: null, modelIdentifier: '', value: '', delaySeconds: 0 })
+  }
+  dialogVisible.value = true
+}
+
 const showEditDialog = async (row) => {
   isEdit.value = true
   form.scene = { ...row }
@@ -303,6 +379,16 @@ const handleDelete = async (sceneId) => {
   loadScenes()
 }
 
+const handleCopy = async (row) => {
+  try {
+    await copyScene(row.sceneId)
+    ElMessage.success('场景复制成功')
+    loadScenes()
+  } catch (e) {
+    // handled by interceptor
+  }
+}
+
 const showDetailDialog = async (row) => {
   detailScene.value = row
   detailVisible.value = true
@@ -311,19 +397,64 @@ const showDetailDialog = async (row) => {
   detailActions.value = actionsRes.data
 }
 
+const showLogDialog = async (row) => {
+  logScene.value = row
+  logVisible.value = true
+  logLoading.value = true
+  sceneLogs.value = []
+  try {
+    const res = await getSceneLogs({ sceneId: row.sceneId, pageSize: 50 })
+    sceneLogs.value = res.data?.rows || res.data || []
+  } catch (e) {
+    console.error('加载执行日志失败:', e)
+  } finally {
+    logLoading.value = false
+  }
+}
+
 onMounted(async () => {
   const devicesRes = await listDevices({ pageSize: 1000 })
   allDevices.value = devicesRes.data.rows
   loadScenes()
+
+  // Check if navigated from template page with prefilled data
+  const templateData = history.state?.templateData
+  if (route.query.fromTemplate === '1' && templateData) {
+    await nextTick()
+    showTemplateDialog(templateData)
+  }
 })
 </script>
 
 <style lang="scss" scoped>
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #f0f4f8;
+  }
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
 .trigger-item, .action-item {
   padding: 16px;
   margin-bottom: 12px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
+}
+
+.log-empty {
+  padding: 20px 0;
 }
 </style>

@@ -10,10 +10,13 @@ import com.smarthome.model.dto.DevicePropertyDTO;
 import com.smarthome.model.entity.Device;
 import com.smarthome.model.entity.DevicePropertyLog;
 import com.smarthome.model.entity.Product;
+import com.smarthome.model.entity.Room;
 import com.smarthome.model.entity.ThingsModel;
 import com.smarthome.model.mapper.DeviceMapper;
 import com.smarthome.model.mapper.DevicePropertyLogMapper;
+import com.smarthome.model.mapper.RoomMapper;
 import com.smarthome.model.mapper.ThingsModelMapper;
+import com.smarthome.model.vo.DeviceDetailVO;
 import com.smarthome.model.vo.DeviceStatusVO;
 import com.smarthome.mqtt.handler.MqttMessageHandler;
 import com.smarthome.mqtt.service.MqttSendService;
@@ -38,6 +41,7 @@ public class DeviceService {
     private final DeviceMapper deviceMapper;
     private final ThingsModelMapper thingsModelMapper;
     private final DevicePropertyLogMapper propertyLogMapper;
+    private final RoomMapper roomMapper;
     private final RedisUtils redisUtils;
     private final MqttSendService mqttSendService;
     private final MqttMessageHandler mqttMessageHandler;
@@ -141,6 +145,73 @@ public class DeviceService {
         return deviceMapper.selectList(
                 new LambdaQueryWrapper<Device>().eq(Device::getStatus, Constants.DEVICE_ONLINE)
         );
+    }
+
+    /**
+     * 获取设备详情（含产品信息、物模型、当前属性值、房间信息）
+     */
+    public DeviceDetailVO getDeviceDetail(Long deviceId) {
+        Device device = deviceMapper.selectById(deviceId);
+        if (device == null) {
+            throw new BusinessException("设备不存在");
+        }
+
+        DeviceDetailVO vo = new DeviceDetailVO();
+        vo.setDevice(device);
+
+        // 查询产品信息
+        Product product = productService.getById(device.getProductId());
+        vo.setProduct(product);
+
+        // 查询房间名称
+        if (device.getRoomId() != null) {
+            Room room = roomMapper.selectById(device.getRoomId());
+            if (room != null) {
+                vo.setRoomName(room.getRoomName());
+            }
+        }
+
+        // 查询物模型
+        List<ThingsModel> thingsModels = thingsModelMapper.selectList(
+                new LambdaQueryWrapper<ThingsModel>()
+                        .eq(ThingsModel::getProductId, device.getProductId())
+                        .orderByAsc(ThingsModel::getSortOrder)
+        );
+        vo.setThingsModels(thingsModels);
+
+        // 从 Redis 获取属性值
+        String redisKey = Constants.REDIS_DEVICE_PROPERTIES + device.getSerialNumber();
+        Object props = redisUtils.hGetAll(redisKey);
+        if (props instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, String> properties = (Map<String, String>) (Map<?, ?>) props;
+            vo.setProperties(properties);
+        }
+
+        return vo;
+    }
+
+    /**
+     * 获取设备属性历史数据（分页，按时间倒序）
+     */
+    public PageResult<DevicePropertyLog> getDevicePropertyHistory(
+            Long deviceId, String identifier, LocalDateTime startTime,
+            LocalDateTime endTime, int pageNum, int pageSize) {
+        LambdaQueryWrapper<DevicePropertyLog> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(DevicePropertyLog::getDeviceId, deviceId);
+        if (identifier != null && !identifier.isEmpty()) {
+            wrapper.eq(DevicePropertyLog::getIdentifier, identifier);
+        }
+        if (startTime != null) {
+            wrapper.ge(DevicePropertyLog::getCreateTime, startTime);
+        }
+        if (endTime != null) {
+            wrapper.le(DevicePropertyLog::getCreateTime, endTime);
+        }
+        wrapper.orderByDesc(DevicePropertyLog::getCreateTime);
+        Page<DevicePropertyLog> page = propertyLogMapper.selectPage(
+                new Page<>(pageNum, pageSize), wrapper);
+        return new PageResult<>(page.getTotal(), page.getRecords());
     }
 
     /**

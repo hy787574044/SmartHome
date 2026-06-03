@@ -167,10 +167,10 @@ onMounted(() => loadData())
     .detail-item {
       margin-bottom: 8px;
       font-size: 14px;
-      color: #606266;
+      color: #f0f4f8;
 
       .label {
-        color: #909399;
+        color: #94a3b8;
       }
     }
   }

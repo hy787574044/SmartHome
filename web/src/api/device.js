@@ -38,3 +38,11 @@ export function controlDevice(deviceId, identifier, value) {
     params: { identifier, value },
   })
 }
+
+export function getDeviceDetail(deviceId) {
+  return request.get(`/device/${deviceId}/detail`)
+}
+
+export function getDeviceHistory(deviceId, params) {
+  return request.get(`/device/${deviceId}/history`, { params })
+}

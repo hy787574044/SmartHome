@@ -146,6 +146,21 @@ CREATE TABLE IF NOT EXISTS `scene_action` (
 ) ENGINE=InnoDB COMMENT='场景执行动作';
 
 -- -------------------------------------------
+-- 场景执行日志表
+-- -------------------------------------------
+CREATE TABLE IF NOT EXISTS `scene_log` (
+    `log_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+    `scene_id` BIGINT NOT NULL COMMENT '场景ID',
+    `trigger_info` VARCHAR(500) DEFAULT NULL COMMENT '触发信息',
+    `action_results` TEXT DEFAULT NULL COMMENT '执行结果(JSON)',
+    `status` TINYINT DEFAULT 1 COMMENT '状态: 0=失败 1=成功 2=部分成功',
+    `execute_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '执行时间',
+    PRIMARY KEY (`log_id`),
+    KEY `idx_scene_id` (`scene_id`),
+    KEY `idx_execute_time` (`execute_time`)
+) ENGINE=InnoDB COMMENT='场景执行日志';
+
+-- -------------------------------------------
 -- 告警规则表
 -- -------------------------------------------
 CREATE TABLE IF NOT EXISTS `alert_rule` (
@@ -201,6 +216,26 @@ CREATE TABLE IF NOT EXISTS `device_property_log` (
     KEY `idx_device_id` (`device_id`),
     KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB COMMENT='设备属性历史记录';
+
+-- -------------------------------------------
+-- 通知配置表
+-- -------------------------------------------
+CREATE TABLE IF NOT EXISTS `notification_config` (
+    `config_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '配置ID',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
+    `notify_type` VARCHAR(20) NOT NULL COMMENT '通知类型: wechat/email/sms',
+    `config` JSON DEFAULT NULL COMMENT '配置(JSON): webhook url/email addr/phone',
+    `enable` TINYINT DEFAULT 1 COMMENT '是否启用: 0=禁用 1=启用',
+    `quiet_start` VARCHAR(5) DEFAULT NULL COMMENT '免打扰开始时间 HH:mm',
+    `quiet_end` VARCHAR(5) DEFAULT NULL COMMENT '免打扰结束时间 HH:mm',
+    `create_by` VARCHAR(64) DEFAULT NULL,
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_by` VARCHAR(64) DEFAULT NULL,
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `remark` VARCHAR(500) DEFAULT NULL,
+    PRIMARY KEY (`config_id`),
+    KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB COMMENT='通知配置';
 
 -- =============================================
 -- 初始化示例数据
@@ -272,6 +307,117 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
     UNIQUE KEY `uk_username` (`username`)
 ) ENGINE=InnoDB COMMENT='系统用户';
 
+-- -------------------------------------------
+-- 家庭表
+-- -------------------------------------------
+CREATE TABLE IF NOT EXISTS `family` (
+    `family_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '家庭ID',
+    `family_name` VARCHAR(100) NOT NULL COMMENT '家庭名称',
+    `creator_id` BIGINT NOT NULL COMMENT '创建者ID',
+    `invite_code` VARCHAR(10) NOT NULL COMMENT '邀请码（6位随机）',
+    `status` TINYINT DEFAULT 1 COMMENT '状态: 0=禁用 1=正常',
+    `create_by` VARCHAR(64) DEFAULT NULL,
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_by` VARCHAR(64) DEFAULT NULL,
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `remark` VARCHAR(500) DEFAULT NULL,
+    PRIMARY KEY (`family_id`),
+    UNIQUE KEY `uk_invite_code` (`invite_code`),
+    KEY `idx_creator_id` (`creator_id`)
+) ENGINE=InnoDB COMMENT='家庭';
+
+-- -------------------------------------------
+-- 家庭成员表
+-- -------------------------------------------
+CREATE TABLE IF NOT EXISTS `family_member` (
+    `member_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '成员ID',
+    `family_id` BIGINT NOT NULL COMMENT '家庭ID',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
+    `role` VARCHAR(20) DEFAULT 'member' COMMENT '角色: admin/member/guest',
+    `join_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
+    PRIMARY KEY (`member_id`),
+    UNIQUE KEY `uk_family_user` (`family_id`, `user_id`),
+    KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB COMMENT='家庭成员';
+
 -- 默认管理员账户 (密码: admin123)
 INSERT INTO `sys_user` (`username`, `password`, `nickname`, `status`) VALUES
 ('admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '管理员', 1);
+
+-- -------------------------------------------
+-- 设备分组表
+-- -------------------------------------------
+CREATE TABLE IF NOT EXISTS `device_group` (
+    `group_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '分组ID',
+    `group_name` VARCHAR(100) DEFAULT NULL COMMENT '分组名称',
+    `icon` VARCHAR(50) DEFAULT NULL COMMENT '图标',
+    `sort_order` INT DEFAULT 0 COMMENT '排序',
+    `create_by` VARCHAR(64) DEFAULT NULL,
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_by` VARCHAR(64) DEFAULT NULL,
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `remark` VARCHAR(500) DEFAULT NULL,
+    PRIMARY KEY (`group_id`)
+) ENGINE=InnoDB COMMENT='设备分组';
+
+-- -------------------------------------------
+-- 设备分组-设备关联表
+-- -------------------------------------------
+CREATE TABLE IF NOT EXISTS `device_group_device` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'ID',
+    `group_id` BIGINT DEFAULT NULL COMMENT '分组ID',
+    `device_id` BIGINT DEFAULT NULL COMMENT '设备ID',
+    PRIMARY KEY (`id`),
+    KEY `idx_group` (`group_id`)
+) ENGINE=InnoDB COMMENT='设备分组-设备关联';
+
+-- -------------------------------------------
+-- 系统配置表
+-- -------------------------------------------
+CREATE TABLE IF NOT EXISTS `system_config` (
+    `config_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '配置ID',
+    `config_key` VARCHAR(100) NOT NULL COMMENT '配置键',
+    `config_value` VARCHAR(500) DEFAULT NULL COMMENT '配置值',
+    `config_name` VARCHAR(100) NOT NULL COMMENT '配置名称',
+    `create_by` VARCHAR(64) DEFAULT NULL,
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_by` VARCHAR(64) DEFAULT NULL,
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `remark` VARCHAR(500) DEFAULT NULL,
+    PRIMARY KEY (`config_id`),
+    UNIQUE KEY `uk_config_key` (`config_key`)
+) ENGINE=InnoDB COMMENT='系统配置';
+
+-- -------------------------------------------
+-- 操作日志表
+-- -------------------------------------------
+CREATE TABLE IF NOT EXISTS `operation_log` (
+    `log_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+    `user_id` BIGINT DEFAULT NULL COMMENT '操作用户ID',
+    `username` VARCHAR(50) DEFAULT NULL COMMENT '操作用户名',
+    `module` VARCHAR(20) NOT NULL COMMENT '操作模块: device/scene/alert/system',
+    `operation` VARCHAR(20) NOT NULL COMMENT '操作类型: 控制/创建/删除/修改/执行/处理/忽略',
+    `target` VARCHAR(100) DEFAULT NULL COMMENT '操作目标: 设备名/场景名',
+    `detail` VARCHAR(500) DEFAULT NULL COMMENT '具体操作内容',
+    `ip` VARCHAR(50) DEFAULT NULL COMMENT '操作IP',
+    `status` TINYINT DEFAULT 1 COMMENT '操作状态: 0=失败 1=成功',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`log_id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_module` (`module`),
+    KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB COMMENT='操作日志';
+
+-- 系统配置初始数据
+INSERT INTO `system_config` (`config_key`, `config_value`, `config_name`, `remark`) VALUES
+('mqtt.host', '127.0.0.1', 'MQTT服务器地址', 'MQTT Broker地址'),
+('mqtt.port', '1883', 'MQTT端口', 'MQTT Broker端口'),
+('mqtt.username', '', 'MQTT用户名', 'MQTT认证用户名'),
+('mqtt.password', '', 'MQTT密码', 'MQTT认证密码'),
+('mqtt.client_id', 'smarthome-server', 'MQTT客户端ID', '服务端MQTT客户端标识'),
+('alert.default_level', '1', '默认告警级别', '1=提示 2=警告 3=严重'),
+('alert.silent_minutes', '30', '告警静默时间(分钟)', '同一规则触发告警的最小间隔'),
+('alert.max_per_day', '100', '每日最大告警数', '单个设备每日最大告警次数'),
+('log.retain_days', '90', '日志保留天数', '过期日志自动清理天数'),
+('system.name', 'SmartHome', '系统名称', '全屋智能控制系统'),
+('system.version', '1.0.0', '系统版本', '当前系统版本号');

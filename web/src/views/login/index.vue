@@ -3,7 +3,7 @@
     <ParticleBackground />
 
     <!-- 主登录卡片 -->
-    <div class="login-card" :class="{ 'card-enter': cardVisible }">
+    <div class="login-card">
       <!-- 左侧品牌区域 -->
       <div class="brand-panel">
         <div class="brand-content">
@@ -113,7 +113,6 @@ const router = useRouter()
 const loginFormRef = ref(null)
 const loading = ref(false)
 const rememberMe = ref(false)
-const cardVisible = ref(false)
 
 const loginForm = reactive({
   username: '',
@@ -168,7 +167,6 @@ onMounted(() => {
     loginForm.username = remembered
     rememberMe.value = true
   }
-  setTimeout(() => { cardVisible.value = true }, 100)
 })
 </script>
 
@@ -198,14 +196,6 @@ onMounted(() => {
     0 0 40px rgba(0, 212, 255, 0.1),
     0 0 80px rgba(123, 97, 255, 0.05),
     inset 0 0 40px rgba(0, 0, 0, 0.2);
-  opacity: 0;
-  transform: translateY(30px) scale(0.95);
-  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &.card-enter {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 // 品牌区域
@@ -370,35 +360,43 @@ onMounted(() => {
     margin-bottom: 24px;
   }
 
-  :deep(.el-input__wrapper) {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: none !important;
-    border-radius: 12px;
-    height: 48px;
-    transition: all 0.3s;
+  :deep(.el-input) {
+    .el-input__wrapper {
+      background-color: rgba(255, 255, 255, 0.06) !important;
+      box-shadow: none !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      border-radius: 12px;
+      height: 50px;
+      padding: 0 16px;
+      transition: all 0.3s;
 
-    &:hover {
-      border-color: rgba(0, 212, 255, 0.3) !important;
+      &:hover {
+        border-color: rgba(0, 212, 255, 0.35) !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+      }
+
+      &.is-focus {
+        border-color: #00d4ff !important;
+        background-color: rgba(0, 212, 255, 0.06) !important;
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12) !important;
+      }
     }
 
-    &.is-focus {
-      border-color: #00d4ff !important;
-      box-shadow: 0 0 20px rgba(0, 212, 255, 0.15) !important;
+    .el-input__inner {
+      color: #fff !important;
+      background: transparent !important;
+      font-size: 15px;
+      box-shadow: none !important;
+
+      &::placeholder {
+        color: #64748b !important;
+      }
     }
-  }
 
-  :deep(.el-input__inner) {
-    color: #e2e8f0;
-    font-size: 15px;
-
-    &::placeholder {
-      color: #475569;
+    .el-input__prefix {
+      color: #64748b;
+      font-size: 18px;
     }
-  }
-
-  :deep(.el-input__prefix) {
-    color: #64748b;
   }
 }
 

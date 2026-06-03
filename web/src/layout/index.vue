@@ -2,8 +2,15 @@
   <div class="layout-wrapper">
     <ParticleBackground />
     <el-container class="layout-container">
-      <!-- 侧边栏 -->
-      <el-aside :width="isCollapse ? '64px' : '220px'" class="aside">
+      <!-- 移动端侧边栏抽屉遮罩 -->
+      <div
+        v-if="isMobile && mobileDrawerVisible"
+        class="mobile-drawer-overlay"
+        @click="mobileDrawerVisible = false"
+      ></div>
+
+      <!-- 侧边栏（桌面端） -->
+      <el-aside v-if="!isMobile" :width="isCollapse ? '64px' : '220px'" class="aside">
         <div class="logo" @click="$router.push('/')">
           <div class="logo-icon-wrapper">
             <div class="logo-ring"></div>
@@ -26,8 +33,10 @@
         <el-menu
           :default-active="activeMenu"
           :collapse="isCollapse"
+          :unique-opened="true"
           router
           class="side-menu"
+          @select="handleMenuClick"
         >
           <el-menu-item index="/dashboard">
             <el-icon><HomeFilled /></el-icon>
@@ -48,10 +57,14 @@
             <template #title>房间管理</template>
           </el-menu-item>
 
-          <el-menu-item index="/scene">
-            <el-icon><Connection /></el-icon>
-            <template #title>场景联动</template>
-          </el-menu-item>
+          <el-sub-menu index="scene">
+            <template #title>
+              <el-icon><Connection /></el-icon>
+              <span>场景联动</span>
+            </template>
+            <el-menu-item index="/scene">场景列表</el-menu-item>
+            <el-menu-item index="/scene/templates">场景模板</el-menu-item>
+          </el-sub-menu>
 
           <el-sub-menu index="alert">
             <template #title>
@@ -60,18 +73,144 @@
             </template>
             <el-menu-item index="/alert/rules">告警规则</el-menu-item>
             <el-menu-item index="/alert/logs">告警日志</el-menu-item>
+            <el-menu-item index="/notification">通知设置</el-menu-item>
+          </el-sub-menu>
+
+          <el-sub-menu index="analytics">
+            <template #title>
+              <el-icon><DataLine /></el-icon>
+              <span>数据分析</span>
+            </template>
+            <el-menu-item index="/analytics/energy">能耗统计</el-menu-item>
+            <el-menu-item index="/analytics/alert">告警统计</el-menu-item>
+          </el-sub-menu>
+
+          <el-menu-item index="/family">
+            <el-icon><Van /></el-icon>
+            <template #title>家庭管理</template>
+          </el-menu-item>
+
+          <el-sub-menu index="system">
+            <template #title>
+              <el-icon><Setting /></el-icon>
+              <span>系统管理</span>
+            </template>
+            <el-menu-item index="/log">操作日志</el-menu-item>
+            <el-menu-item index="/system/settings">系统设置</el-menu-item>
+            <el-menu-item index="/system/about">关于系统</el-menu-item>
           </el-sub-menu>
         </el-menu>
 
         <div class="aside-deco-line"></div>
       </el-aside>
 
+      <!-- 侧边栏（移动端抽屉） -->
+      <transition name="slide-drawer">
+        <el-aside
+          v-if="isMobile && mobileDrawerVisible"
+          width="260px"
+          class="aside mobile-drawer"
+        >
+          <div class="logo" @click="$router.push('/')">
+            <div class="logo-icon-wrapper">
+              <div class="logo-ring"></div>
+              <svg class="logo-svg" viewBox="0 0 40 40" fill="none">
+                <defs>
+                  <linearGradient id="logoGradMobile" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#00d4ff" />
+                    <stop offset="100%" stop-color="#7b61ff" />
+                  </linearGradient>
+                </defs>
+                <path d="M20 4L6 14v16l14 10 14-10V14L20 4z" stroke="url(#logoGradMobile)" stroke-width="2" fill="none" />
+                <circle cx="20" cy="20" r="6" fill="url(#logoGradMobile)" />
+              </svg>
+            </div>
+            <span class="logo-text">SmartHome</span>
+          </div>
+
+          <el-menu
+            :default-active="activeMenu"
+            :collapse="false"
+            router
+            class="side-menu"
+            @select="handleMenuClick"
+          >
+            <el-menu-item index="/dashboard">
+              <el-icon><HomeFilled /></el-icon>
+              <template #title>首页</template>
+            </el-menu-item>
+
+            <el-sub-menu index="device">
+              <template #title>
+                <el-icon><Monitor /></el-icon>
+                <span>设备管理</span>
+              </template>
+              <el-menu-item index="/device/list">设备列表</el-menu-item>
+              <el-menu-item index="/device/product">产品管理</el-menu-item>
+            </el-sub-menu>
+
+            <el-menu-item index="/room">
+              <el-icon><House /></el-icon>
+              <template #title>房间管理</template>
+            </el-menu-item>
+
+            <el-sub-menu index="scene">
+              <template #title>
+                <el-icon><Connection /></el-icon>
+                <span>场景联动</span>
+              </template>
+              <el-menu-item index="/scene">场景列表</el-menu-item>
+              <el-menu-item index="/scene/templates">场景模板</el-menu-item>
+            </el-sub-menu>
+
+            <el-sub-menu index="alert">
+              <template #title>
+                <el-icon><Bell /></el-icon>
+                <span>告警监控</span>
+              </template>
+              <el-menu-item index="/alert/rules">告警规则</el-menu-item>
+              <el-menu-item index="/alert/logs">告警日志</el-menu-item>
+              <el-menu-item index="/notification">通知设置</el-menu-item>
+            </el-sub-menu>
+
+            <el-sub-menu index="analytics">
+              <template #title>
+                <el-icon><DataLine /></el-icon>
+                <span>数据分析</span>
+              </template>
+              <el-menu-item index="/analytics/energy">能耗统计</el-menu-item>
+              <el-menu-item index="/analytics/alert">告警统计</el-menu-item>
+            </el-sub-menu>
+
+            <el-menu-item index="/family">
+              <el-icon><Van /></el-icon>
+              <template #title>家庭管理</template>
+            </el-menu-item>
+
+            <el-sub-menu index="system">
+              <template #title>
+                <el-icon><Setting /></el-icon>
+                <span>系统管理</span>
+              </template>
+              <el-menu-item index="/log">操作日志</el-menu-item>
+              <el-menu-item index="/system/settings">系统设置</el-menu-item>
+              <el-menu-item index="/system/about">关于系统</el-menu-item>
+            </el-sub-menu>
+          </el-menu>
+
+          <div class="aside-deco-line"></div>
+        </el-aside>
+      </transition>
+
       <!-- 主内容区 -->
       <el-container class="main-container">
         <!-- 顶部栏 -->
         <el-header class="header">
           <div class="header-left">
-            <el-icon class="collapse-btn" @click="isCollapse = !isCollapse">
+            <el-icon v-if="isMobile" class="collapse-btn" @click="mobileDrawerVisible = !mobileDrawerVisible">
+              <Operation />
+            </el-icon>
+            <el-icon v-else class="collapse-btn" @click="isCollapse = !isCollapse">
               <component :is="isCollapse ? 'Expand' : 'Fold'" />
             </el-icon>
             <el-breadcrumb separator="/">
@@ -87,7 +226,7 @@
                 <div class="user-avatar">
                   <el-icon><User /></el-icon>
                 </div>
-                <span v-show="!isCollapse" class="user-name">{{ userName }}</span>
+                <span v-show="!isCollapse || isMobile" class="user-name">{{ userName }}</span>
                 <el-icon class="arrow-icon"><ArrowDown /></el-icon>
               </div>
               <template #dropdown>
@@ -117,10 +256,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { connectWebSocket, disconnectWebSocket, onWebSocketMessage, offWebSocketMessage } from '@/utils/websocket'
 import { ElNotification, ElMessageBox } from 'element-plus'
+import { Operation } from '@element-plus/icons-vue'
 import ParticleBackground from '@/components/ParticleBackground.vue'
 
 const route = useRoute()
@@ -128,6 +268,22 @@ const router = useRouter()
 const isCollapse = ref(false)
 const alertCount = ref(0)
 const userName = ref('Admin')
+
+// 移动端响应式检测
+const isMobile = ref(window.innerWidth < 768)
+const mobileDrawerVisible = ref(false)
+
+const handleResize = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
+// 移动端默认收起侧边栏
+watch(isMobile, (val) => {
+  if (val) {
+    isCollapse.value = true
+    mobileDrawerVisible.value = false
+  }
+})
 
 const activeMenu = computed(() => route.path)
 
@@ -148,6 +304,13 @@ const handleAlert = (data) => {
     type: 'warning',
     duration: 5000,
   })
+}
+
+// 移动端菜单点击后自动关闭侧边栏
+const handleMenuClick = () => {
+  if (isMobile.value) {
+    mobileDrawerVisible.value = false
+  }
 }
 
 const handleUserCommand = (command) => {
@@ -171,12 +334,16 @@ onMounted(() => {
   onWebSocketMessage('alert', handleAlert)
   const stored = localStorage.getItem('userName')
   if (stored) userName.value = stored
+  window.addEventListener('resize', handleResize)
+  // 初始化移动端状态
+  if (isMobile.value) isCollapse.value = true
 })
 
 onUnmounted(() => {
   offWebSocketMessage('deviceStatus', handleDeviceStatus)
   offWebSocketMessage('alert', handleAlert)
   disconnectWebSocket()
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -504,6 +671,92 @@ onUnmounted(() => {
 
   &:hover {
     background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+// 移动端抽屉遮罩
+.mobile-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+// 移动端抽屉侧边栏
+.mobile-drawer {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 1000;
+}
+
+// 抽屉滑入/滑出动画
+.slide-drawer-enter-active,
+.slide-drawer-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-drawer-enter-from,
+.slide-drawer-leave-to {
+  transform: translateX(-100%);
+}
+
+// 媒体查询 - 移动端适配
+@media (max-width: 768px) {
+  .aside {
+    position: fixed;
+    z-index: 1000;
+  }
+
+  .header {
+    padding: 0 12px;
+  }
+
+  .main {
+    padding: 12px;
+  }
+
+  // 移动端表格横向滚动
+  :deep(.el-table) {
+    width: 100% !important;
+    overflow-x: auto;
+
+    .el-table__body-wrapper {
+      overflow-x: auto;
+    }
+  }
+
+  :deep(.el-table__body),
+  :deep(.el-table__header) {
+    min-width: 600px;
+  }
+
+  // 移动端对话框全屏显示
+  :deep(.el-dialog) {
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    max-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+
+    .el-dialog__header {
+      flex-shrink: 0;
+    }
+
+    .el-dialog__body {
+      flex: 1;
+      overflow-y: auto;
+    }
+  }
+
+  :deep(.el-overlay) {
+    z-index: 2000;
   }
 }
 </style>

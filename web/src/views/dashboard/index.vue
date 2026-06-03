@@ -32,6 +32,156 @@
       </div>
     </div>
 
+    <!-- Device Group Quick Control -->
+    <div class="section-row">
+      <div class="panel panel--groups">
+        <div class="panel__header">
+          <div class="panel__title">
+            <span class="panel__title-icon panel__title-icon--purple">
+              <el-icon><FolderOpened /></el-icon>
+            </span>
+            设备分组快捷控制
+          </div>
+          <div class="panel__header-decor"></div>
+        </div>
+        <div class="panel__body">
+          <div v-if="deviceGroups.length === 0" class="empty-state">
+            <el-empty description="暂无设备分组" :image-size="60" />
+          </div>
+          <div v-else class="group-grid">
+            <div
+              v-for="group in deviceGroups"
+              :key="group.groupId"
+              class="group-card"
+            >
+              <div class="group-card__header">
+                <div class="group-card__icon">
+                  <el-icon :size="24"><FolderOpened /></el-icon>
+                </div>
+                <div class="group-card__count">{{ group.deviceCount || 0 }} 台</div>
+              </div>
+              <div class="group-card__name">{{ group.groupName }}</div>
+              <div class="group-card__actions">
+                <el-button
+                  size="small"
+                  type="primary"
+                  class="group-btn group-btn--on"
+                  @click="handleGroupControl(group.groupId, 'switch', true)"
+                  :loading="groupLoadingId === group.groupId"
+                >
+                  <el-icon><Open /></el-icon>
+                  全开
+                </el-button>
+                <el-button
+                  size="small"
+                  class="group-btn group-btn--off"
+                  @click="handleGroupControl(group.groupId, 'switch', false)"
+                  :loading="groupLoadingId === group.groupId"
+                >
+                  <el-icon><TurnOff /></el-icon>
+                  全关
+                </el-button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Realtime Sensor Data -->
+      <div class="panel panel--sensor">
+        <div class="panel__header">
+          <div class="panel__title">
+            <span class="panel__title-icon panel__title-icon--teal">
+              <el-icon><DataLine /></el-icon>
+            </span>
+            实时数据
+          </div>
+          <div class="sensor-update-hint">
+            <el-icon :size="12"><Refresh /></el-icon>
+            {{ lastSensorUpdate || '加载中...' }}
+          </div>
+        </div>
+        <div class="panel__body">
+          <div v-if="sensorData.length === 0" class="empty-state">
+            <el-empty description="暂无传感器数据" :image-size="60" />
+          </div>
+          <div v-else class="sensor-grid">
+            <div
+              v-for="(sensor, idx) in sensorData"
+              :key="idx"
+              class="sensor-card"
+            >
+              <div class="sensor-card__icon-wrap" :class="`sensor-card__icon-wrap--${sensor.type}`">
+                <el-icon :size="36">
+                  <component :is="sensor.icon" />
+                </el-icon>
+              </div>
+              <div class="sensor-card__info">
+                <div class="sensor-card__label">{{ sensor.label }}</div>
+                <div class="sensor-card__value-wrap">
+                  <span class="sensor-card__value" :class="{ 'sensor-card__value--pulse': sensor.pulse }">
+                    {{ sensor.displayValue }}
+                  </span>
+                  <span class="sensor-card__unit">{{ sensor.unit }}</span>
+                </div>
+                <div class="sensor-card__device-name">{{ sensor.deviceName }}</div>
+              </div>
+              <div class="sensor-card__bar">
+                <div
+                  class="sensor-card__bar-fill"
+                  :class="`sensor-card__bar-fill--${sensor.type}`"
+                  :style="{ width: sensor.barWidth + '%' }"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Scene Execution -->
+    <div class="section-row">
+      <div class="panel panel--scenes">
+        <div class="panel__header">
+          <div class="panel__title">
+            <span class="panel__title-icon panel__title-icon--green">
+              <el-icon><MagicStick /></el-icon>
+            </span>
+            快捷场景
+          </div>
+          <el-button class="view-all-btn" text @click="$router.push('/scene/list')">
+            管理场景
+            <el-icon class="view-all-btn__arrow"><ArrowRight /></el-icon>
+          </el-button>
+        </div>
+        <div class="panel__body">
+          <div v-if="enabledScenes.length === 0" class="empty-state">
+            <el-empty description="暂无已启用场景" :image-size="60" />
+          </div>
+          <div v-else class="scene-grid">
+            <div
+              v-for="scene in enabledScenes"
+              :key="scene.sceneId"
+              class="scene-card"
+              :class="{ 'scene-card--executing': executingSceneId === scene.sceneId }"
+              @click="handleExecuteScene(scene.sceneId)"
+            >
+              <div class="scene-card__glow"></div>
+              <div class="scene-card__icon">
+                <el-icon :size="28"><component :is="getSceneIcon(scene.sceneName)" /></el-icon>
+              </div>
+              <div class="scene-card__name">{{ scene.sceneName }}</div>
+              <div class="scene-card__desc">{{ scene.remark || '一键执行' }}</div>
+              <div class="scene-card__action">
+                <el-icon v-if="executingSceneId === scene.sceneId" class="scene-spinning"><Loading /></el-icon>
+                <el-icon v-else><CaretRight /></el-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Content Row -->
     <div class="main-row">
       <!-- Device Overview -->
@@ -144,28 +294,54 @@
 
 <script setup>
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
-import { getDashboardStats } from '@/api/dashboard'
+import { ElMessage } from 'element-plus'
+import { getDashboardStats, getRealtimeSensorData } from '@/api/dashboard'
 import { listRooms } from '@/api/room'
 import { listDevices } from '@/api/device'
 import { listAlertLogs } from '@/api/alert'
+import { listDeviceGroups, controlDeviceGroup } from '@/api/deviceGroup'
+import { listScenes, executeScene } from '@/api/scene'
 import {
   Monitor, Warning, ArrowRight, Clock,
-  Cpu, Connection, CircleClose, Bell
+  Cpu, Connection, CircleClose, Bell,
+  FolderOpened, Open, TurnOff, DataLine, Refresh,
+  MagicStick, CaretRight, Loading, Sunny, Moon,
+  HomeFilled, SetUp, House, PartlyCloudy, Sunset
 } from '@element-plus/icons-vue'
 
-const stats = ref({ totalDevices: 0, onlineDevices: 0, offlineDevices: 0 })
+const stats = ref({
+  totalDevices: 0,
+  onlineDevices: 0,
+  offlineDevices: 0,
+  todayAlertCount: 0,
+  sceneExecutionCount: 0,
+})
 const alertCount = ref(0)
 const rooms = ref([])
 const devices = ref([])
 const recentAlerts = ref([])
 
-const animatedValues = reactive([0, 0, 0, 0])
+// Device groups
+const deviceGroups = ref([])
+const groupLoadingId = ref(null)
+
+// Scenes
+const enabledScenes = ref([])
+const executingSceneId = ref(null)
+
+// Sensor data
+const sensorData = ref([])
+const lastSensorUpdate = ref('')
+
+const animatedValues = reactive([0, 0, 0, 0, 0, 0])
 
 const statCards = [
   { key: 'totalDevices', label: '设备总数', icon: Cpu, theme: 'blue', sparkline: '0,35 10,28 20,32 30,20 40,25 50,15 60,22 70,10 80,18 90,8 100,12 110,5 120,10' },
   { key: 'onlineDevices', label: '在线设备', icon: Connection, theme: 'green', sparkline: '0,30 10,25 20,28 30,18 40,22 50,12 60,20 70,8 80,15 90,5 100,10 110,3 120,8' },
   { key: 'offlineDevices', label: '离线设备', icon: CircleClose, theme: 'gray', sparkline: '0,10 10,15 20,12 30,20 40,18 50,25 60,15 70,22 80,18 90,28 100,20 110,25 120,18' },
   { key: 'alertCount', label: '待处理告警', icon: Bell, theme: 'orange', sparkline: '0,20 10,15 20,25 30,18 40,30 50,22 60,35 70,28 80,32 90,20 100,25 110,15 120,22' },
+  { key: 'todayAlertCount', label: '今日告警数', icon: Warning, theme: 'red', sparkline: '0,15 10,20 20,10 30,25 40,18 50,30 60,22 70,28 80,15 90,25 100,18 110,30 120,20' },
+  { key: 'sceneExecutionCount', label: '场景执行次数', icon: MagicStick, theme: 'purple', sparkline: '0,8 10,12 20,6 30,18 40,10 50,22 60,15 70,20 80,12 90,28 100,16 110,24 120,18' },
 ]
 
 const getDevicesByRoom = (roomId) => {
@@ -182,20 +358,102 @@ const getAlertLevelText = (level) => {
   return map[level] || '提示'
 }
 
+const getSceneIcon = (name) => {
+  if (name.includes('回家') || name.includes('到家')) return HomeFilled
+  if (name.includes('离家') || name.includes('外出')) return House
+  if (name.includes('睡眠') || name.includes('晚安')) return Moon
+  if (name.includes('起床') || name.includes('早安')) return Sunny
+  if (name.includes('冷')) return PartlyCloudy
+  if (name.includes('暖') || name.includes('热')) return Sunset
+  return SetUp
+}
+
+// Group batch control
+const handleGroupControl = async (groupId, identifier, value) => {
+  groupLoadingId.value = groupId
+  try {
+    await controlDeviceGroup(groupId, identifier, value)
+    ElMessage.success(value ? '已批量开启' : '已批量关闭')
+  } catch (e) {
+    ElMessage.error('控制失败')
+  } finally {
+    groupLoadingId.value = null
+  }
+}
+
+// Execute scene
+const handleExecuteScene = async (sceneId) => {
+  if (executingSceneId.value) return
+  executingSceneId.value = sceneId
+  try {
+    await executeScene(sceneId)
+    ElMessage.success('场景执行成功')
+  } catch (e) {
+    ElMessage.error('场景执行失败')
+  } finally {
+    executingSceneId.value = null
+  }
+}
+
+// Process sensor data from devices
+const processSensorData = (allDevices) => {
+  const sensors = []
+  const tempHumidityDevices = allDevices.filter((d) => {
+    if (!d.properties) return false
+    const keys = Object.keys(d.properties).map((k) => k.toLowerCase())
+    return keys.some((k) => k.includes('temp') || k.includes('temperature') || k.includes('humidity') || k.includes('湿度') || k.includes('温度'))
+  })
+
+  for (const device of tempHumidityDevices) {
+    const props = device.properties || {}
+    for (const [key, value] of Object.entries(props)) {
+      const lk = key.toLowerCase()
+      if (lk.includes('temp') || lk.includes('temperature') || lk.includes('温度')) {
+        const numVal = parseFloat(value)
+        const barPct = isNaN(numVal) ? 50 : Math.min(Math.max((numVal / 50) * 100, 0), 100)
+        sensors.push({
+          label: '温度',
+          displayValue: isNaN(numVal) ? value : numVal.toFixed(1),
+          unit: '°C',
+          deviceName: device.deviceName,
+          type: 'temp',
+          icon: 'Sunny',
+          barWidth: barPct,
+          pulse: true,
+        })
+      } else if (lk.includes('humid') || lk.includes('湿度')) {
+        const numVal = parseFloat(value)
+        const barPct = isNaN(numVal) ? 50 : Math.min(Math.max(numVal, 0), 100)
+        sensors.push({
+          label: '湿度',
+          displayValue: isNaN(numVal) ? value : numVal.toFixed(1),
+          unit: '%',
+          deviceName: device.deviceName,
+          type: 'humidity',
+          icon: 'PartlyCloudy',
+          barWidth: barPct,
+          pulse: true,
+        })
+      }
+    }
+  }
+  return sensors
+}
+
 // Count-up animation
 let animFrame = null
 const animateCount = (targetValues) => {
   const duration = 1500
   const startTime = performance.now()
   const startValues = [...animatedValues]
+  const count = targetValues.length
 
   const step = (now) => {
     const elapsed = now - startTime
     const progress = Math.min(elapsed / duration, 1)
-    // Ease-out cubic
     const ease = 1 - Math.pow(1 - progress, 3)
 
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < count; i++) {
       animatedValues[i] = Math.round(startValues[i] + (targetValues[i] - startValues[i]) * ease)
     }
 
@@ -208,17 +466,50 @@ const animateCount = (targetValues) => {
 
 onMounted(async () => {
   try {
-    const [statsRes, roomsRes, devicesRes, alertsRes] = await Promise.all([
+    const [statsRes, roomsRes, devicesRes, alertsRes, groupsRes, scenesRes] = await Promise.all([
       getDashboardStats(),
       listRooms(),
       listDevices({ pageSize: 100 }),
       listAlertLogs({ status: 1, pageNum: 1, pageSize: 5 }),
+      listDeviceGroups(),
+      listScenes(),
     ])
-    stats.value = statsRes.data
+
+    stats.value = { ...stats.value, ...statsRes.data }
     rooms.value = roomsRes.data
     devices.value = devicesRes.data.rows
     recentAlerts.value = alertsRes.data.rows
     alertCount.value = alertsRes.data.total
+    deviceGroups.value = groupsRes.data || []
+
+    // Filter enabled scenes (status === 0 typically means enabled)
+    const allScenes = Array.isArray(scenesRes.data) ? scenesRes.data : (scenesRes.data?.rows || [])
+    enabledScenes.value = allScenes.filter((s) => s.status === 0 || s.enabled === true || s.status === '0')
+
+    // Process sensor data from devices
+    sensorData.value = processSensorData(devices.value)
+    lastSensorUpdate.value = new Date().toLocaleTimeString('zh-CN')
+
+    // Try to fetch realtime sensor data from dedicated API
+    try {
+      const sensorRes = await getRealtimeSensorData()
+      if (sensorRes.data && Array.isArray(sensorRes.data) && sensorRes.data.length > 0) {
+        sensorData.value = sensorRes.data.map((s) => ({
+          label: s.label || s.name,
+          displayValue: s.value !== undefined ? parseFloat(s.value).toFixed(1) : '--',
+          unit: s.unit || '',
+          deviceName: s.deviceName || '',
+          type: s.type || 'temp',
+          icon: s.type === 'humidity' ? 'PartlyCloudy' : 'Sunny',
+          barWidth: s.type === 'humidity'
+            ? Math.min(Math.max(parseFloat(s.value) || 50, 0), 100)
+            : Math.min(Math.max(((parseFloat(s.value) || 25) / 50) * 100, 0), 100),
+          pulse: true,
+        }))
+      }
+    } catch {
+      // fallback to device properties is already done
+    }
 
     // Trigger count-up animation
     animateCount([
@@ -226,6 +517,8 @@ onMounted(async () => {
       stats.value.onlineDevices,
       stats.value.offlineDevices,
       alertCount.value,
+      stats.value.todayAlertCount || 0,
+      stats.value.sceneExecutionCount || 0,
     ])
   } catch (e) {
     console.error('加载数据失败:', e)
@@ -292,6 +585,25 @@ $radius: 14px;
   50% { opacity: 1; }
 }
 
+@keyframes sensorPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.03); }
+}
+
+@keyframes barFillGrow {
+  from { width: 0; }
+}
+
+@keyframes sceneGlow {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ===== Dashboard Root ===== */
 .dashboard {
   position: relative;
@@ -347,7 +659,7 @@ $radius: 14px;
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 20px;
   margin-bottom: 24px;
 }
@@ -370,6 +682,8 @@ $radius: 14px;
   &:nth-child(2) { animation-delay: 0.08s; }
   &:nth-child(3) { animation-delay: 0.16s; }
   &:nth-child(4) { animation-delay: 0.24s; }
+  &:nth-child(5) { animation-delay: 0.32s; }
+  &:nth-child(6) { animation-delay: 0.40s; }
 
   &:hover {
     transform: translateY(-4px);
@@ -411,6 +725,20 @@ $radius: 14px;
     .stat-card__spark { color: $orange; }
     &:hover { box-shadow: 0 8px 32px rgba($orange, 0.15); }
   }
+  &--red {
+    border-color: rgba($red, 0.25);
+    .stat-card__glow { background: linear-gradient(90deg, transparent, $red, transparent); }
+    .stat-card__icon { background: rgba($red, 0.15); color: $red; }
+    .stat-card__spark { color: $red; }
+    &:hover { box-shadow: 0 8px 32px rgba($red, 0.15); }
+  }
+  &--purple {
+    border-color: rgba($purple, 0.25);
+    .stat-card__glow { background: linear-gradient(90deg, transparent, $purple, transparent); }
+    .stat-card__icon { background: rgba($purple, 0.15); color: $purple; }
+    .stat-card__spark { color: $purple; }
+    &:hover { box-shadow: 0 8px 32px rgba($purple, 0.15); }
+  }
 
   &__icon {
     width: 52px; height: 52px;
@@ -423,6 +751,8 @@ $radius: 14px;
     .stat-card:nth-child(2) & { animation-delay: -0.5s; }
     .stat-card:nth-child(3) & { animation-delay: -1s; }
     .stat-card:nth-child(4) & { animation-delay: -1.5s; }
+    .stat-card:nth-child(5) & { animation-delay: -2s; }
+    .stat-card:nth-child(6) & { animation-delay: -2.5s; }
   }
 
   &__body {
@@ -451,6 +781,310 @@ $radius: 14px;
     opacity: 0.3;
     svg { width: 100%; height: 100%; }
   }
+}
+
+/* ===== Section Row (groups + sensor) ===== */
+.section-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+  animation: fadeSlideUp 0.6s ease 0.2s both;
+}
+
+/* ===== Device Group Cards ===== */
+.group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.group-card {
+  position: relative;
+  padding: 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  transition: all 0.3s;
+  overflow: hidden;
+
+  &:hover {
+    background: rgba(139, 92, 246, 0.04);
+    border-color: rgba(139, 92, 246, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  &__icon {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(139, 92, 246, 0.12);
+    color: $purple;
+  }
+
+  &__count {
+    font-size: 12px;
+    color: $text-dim;
+    background: rgba(139, 92, 246, 0.08);
+    padding: 2px 10px;
+    border-radius: 20px;
+  }
+
+  &__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-primary;
+    margin-bottom: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+.group-btn {
+  flex: 1;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  height: 30px !important;
+  padding: 0 8px !important;
+
+  &--on {
+    background: rgba($green, 0.12) !important;
+    border-color: rgba($green, 0.3) !important;
+    color: $green !important;
+    &:hover { background: rgba($green, 0.2) !important; }
+  }
+
+  &--off {
+    background: rgba($gray, 0.1) !important;
+    border-color: rgba($gray, 0.25) !important;
+    color: $text-secondary !important;
+    &:hover { background: rgba($gray, 0.18) !important; }
+  }
+}
+
+/* ===== Sensor Cards ===== */
+.sensor-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sensor-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(0, 240, 255, 0.08);
+  transition: all 0.3s;
+
+  &:hover {
+    background: rgba(0, 240, 255, 0.03);
+    border-color: rgba(0, 240, 255, 0.15);
+  }
+
+  &__icon-wrap {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    flex-shrink: 0;
+
+    &--temp {
+      background: rgba($orange, 0.12);
+      color: $orange;
+    }
+
+    &--humidity {
+      background: rgba($blue, 0.12);
+      color: $blue;
+    }
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__label {
+    font-size: 12px;
+    color: $text-dim;
+    margin-bottom: 2px;
+  }
+
+  &__value-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  &__value {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+
+    &--pulse {
+      animation: sensorPulse 2.5s ease-in-out infinite;
+    }
+  }
+
+  &__unit {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-secondary;
+  }
+
+  &__device-name {
+    font-size: 11px;
+    color: $text-dim;
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+  }
+
+  &__bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1.5s ease;
+    animation: barFillGrow 1.5s ease both;
+
+    &--temp {
+      background: linear-gradient(90deg, $orange, $red);
+    }
+
+    &--humidity {
+      background: linear-gradient(90deg, $blue, $cyan);
+    }
+  }
+}
+
+/* ===== Scene Cards ===== */
+.scene-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.scene-card {
+  position: relative;
+  padding: 20px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba($green, 0.12);
+  cursor: pointer;
+  transition: all 0.3s;
+  overflow: hidden;
+
+  &:hover {
+    background: rgba($green, 0.04);
+    border-color: rgba($green, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba($green, 0.1);
+  }
+
+  &--executing {
+    border-color: rgba($cyan, 0.4);
+    box-shadow: 0 0 20px rgba($cyan, 0.15);
+  }
+
+  &__glow {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, $green, transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  &:hover .scene-card__glow {
+    opacity: 1;
+    animation: sceneGlow 2s ease-in-out infinite;
+  }
+
+  &__icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba($green, 0.12);
+    color: $green;
+    margin-bottom: 12px;
+  }
+
+  &__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-primary;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__desc {
+    font-size: 12px;
+    color: $text-dim;
+    margin-bottom: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba($green, 0.1);
+    color: $green;
+    font-size: 16px;
+    margin-left: auto;
+  }
+}
+
+.scene-spinning {
+  animation: spin 1s linear infinite;
 }
 
 /* ===== Main Row ===== */
@@ -511,6 +1145,21 @@ $radius: 14px;
       background: rgba($orange, 0.12);
       color: $orange;
     }
+
+    &--purple {
+      background: rgba($purple, 0.12);
+      color: $purple;
+    }
+
+    &--teal {
+      background: rgba($cyan, 0.12);
+      color: $cyan;
+    }
+
+    &--green {
+      background: rgba($green, 0.12);
+      color: $green;
+    }
   }
 
   &__body {
@@ -529,9 +1178,18 @@ $radius: 14px;
   color: $cyan !important;
   font-size: 13px;
   padding: 0 !important;
-  &:hover { color: lighten($cyan, 10%) !important; }
+  &:hover { color: #33ddff !important; }
   &__arrow { margin-left: 4px; transition: transform 0.2s; }
   &:hover .view-all-btn__arrow { transform: translateX(3px); }
+}
+
+/* ===== Sensor Update Hint ===== */
+.sensor-update-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: $text-dim;
 }
 
 /* ===== Device Overview ===== */
@@ -802,13 +1460,20 @@ $radius: 14px;
 }
 
 /* ===== Responsive ===== */
+@media (max-width: 1400px) {
+  .stat-row { grid-template-columns: repeat(3, 1fr); }
+}
+
 @media (max-width: 1200px) {
   .stat-row { grid-template-columns: repeat(2, 1fr); }
+  .section-row { grid-template-columns: 1fr; }
   .main-row { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
   .stat-row { grid-template-columns: 1fr; }
   .dashboard { padding: 12px; }
+  .group-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .scene-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
 }
 </style>

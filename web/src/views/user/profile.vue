@@ -765,7 +765,7 @@ $radius: 14px;
   }
 
   &--warn {
-    background: linear-gradient(135deg, $orange, darken($orange, 10%));
+    background: linear-gradient(135deg, $orange, #e68a00);
 
     &:hover {
       box-shadow: 0 4px 20px rgba($orange, 0.3);
