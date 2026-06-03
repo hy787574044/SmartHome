@@ -1,7 +1,7 @@
 import request from './request'
 
 export function createScene(data) {
-  return request.post('/scene/update', data)
+  return request.post('/scene', data)
 }
 
 export function updateScene(data) {
@@ -36,14 +36,10 @@ export function getSceneTemplates() {
   return request.get('/scene/templates')
 }
 
-export function createSceneFromTemplate(templateId, data) {
-  return request.post(`/scene/templates/${templateId}/create`, data)
-}
-
 export function copyScene(sceneId) {
   return request.post(`/scene/${sceneId}/copy`)
 }
 
-export function getSceneLogs(params) {
-  return request.get('/scene/logs', { params })
+export function getSceneLogs(sceneId, params) {
+  return request.get(`/scene/${sceneId}/logs`, { params })
 }

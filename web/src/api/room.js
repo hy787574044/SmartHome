@@ -1,7 +1,7 @@
 import request from './request'
 
 export function addRoom(data) {
-  return request.post('/room/update', data)
+  return request.post('/room', data)
 }
 
 export function updateRoom(data) {

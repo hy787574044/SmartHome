@@ -2,7 +2,7 @@ import request from './request'
 
 // 设备管理
 export function addDevice(data) {
-  return request.post('/device/update', data)
+  return request.post('/device', data)
 }
 
 export function updateDevice(data) {

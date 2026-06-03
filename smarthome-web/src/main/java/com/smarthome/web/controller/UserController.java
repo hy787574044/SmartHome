@@ -39,7 +39,7 @@ public class UserController {
      * 更新当前登录用户资料（昵称、邮箱、手机号、性别）
      */
     @Operation(summary = "更新用户资料")
-    @PostMapping("/profile")
+    @PostMapping("/profile/update")
     public R<Void> updateProfile(@Valid @RequestBody UpdateProfileDTO updateProfileDTO) {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         userService.updateProfile(userId, updateProfileDTO);
@@ -50,7 +50,7 @@ public class UserController {
      * 修改密码（需验证旧密码）
      */
     @Operation(summary = "修改密码")
-    @PostMapping("/password")
+    @PostMapping("/password/update")
     public R<Void> changePassword(@Valid @RequestBody ChangePasswordDTO changePasswordDTO) {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         userService.changePassword(userId, changePasswordDTO);
@@ -61,7 +61,7 @@ public class UserController {
      * 更新头像URL
      */
     @Operation(summary = "更新头像")
-    @PostMapping("/avatar")
+    @PostMapping("/avatar/update")
     public R<Void> updateAvatar(@Valid @RequestBody UpdateAvatarDTO updateAvatarDTO) {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         userService.updateAvatar(userId, updateAvatarDTO);

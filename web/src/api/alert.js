@@ -2,7 +2,7 @@ import request from './request'
 
 // 告警规则
 export function createAlertRule(data) {
-  return request.post('/alert/rule/update', data)
+  return request.post('/alert/rule', data)
 }
 
 export function updateAlertRule(data) {
