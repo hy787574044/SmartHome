@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.smarthome</groupId>
+        <artifactId>smarthome</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>smarthome-scene</artifactId>
+    <name>smarthome-scene</name>
+    <description>场景联动服务</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.smarthome</groupId>
+            <artifactId>smarthome-device</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>

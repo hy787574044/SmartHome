@@ -1,0 +1,73 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: smarthome
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.7.17:3306/smarthome?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: GlcLMg3SNPrTczvoRN
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      database: 0
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.smarthome.model.entity
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: delFlag
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# MQTT 配置（对接 EMQX）
+# 安装 EMQX 后将 enabled 改为 true
+mqtt:
+  enabled: false
+  broker: tcp://localhost:1883
+  clientId: smarthome-server
+  username: smarthome
+  password: smarthome
+  connection-timeout: 30
+  keep-alive-interval: 60
+  automatic-reconnect: true
+  clean-session: true
+  qos: 1
+
+# Knife4j (Swagger) 配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+# JWT 配置
+jwt:
+  secret: smarthome-secret-key-2024-very-long-and-secure-key-32chars
+  expiration: 86400000
+
+logging:
+  level:
+    com.smarthome: debug
+    org.springframework.integration.mqtt: info

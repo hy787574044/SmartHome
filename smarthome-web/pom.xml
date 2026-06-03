@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.smarthome</groupId>
+        <artifactId>smarthome</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>smarthome-web</artifactId>
+    <name>smarthome-web</name>
+    <description>REST API、WebSocket</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.smarthome</groupId>
+            <artifactId>smarthome-scene</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.smarthome</groupId>
+            <artifactId>smarthome-alert</artifactId>
+        </dependency>
+
+        <!-- Swagger (springdoc-openapi) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-ui</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+
+        <!-- WebSocket -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>

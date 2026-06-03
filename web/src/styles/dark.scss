@@ -1,0 +1,454 @@
+// ========== 赛博科技风 - 明亮版 ==========
+
+// 颜色变量
+$bg-base: #1e2433;
+$bg-card: #283045;
+$bg-input: #313a50;
+$bg-hover: #3a4460;
+$border: rgba(255, 255, 255, 0.15);
+$border-light: rgba(255, 255, 255, 0.1);
+$text-bright: #ffffff;
+$text-primary: #f0f4f8;
+$text-secondary: #b0bcc8;
+$accent-cyan: #00d4ff;
+$accent-purple: #7b61ff;
+$accent-green: #10b981;
+
+// CSS 变量
+*,
+*::before,
+*::after {
+  --el-bg-color: #{$bg-card};
+  --el-bg-color-overlay: #{$bg-card};
+  --el-bg-color-page: #{$bg-base};
+  --el-text-color-primary: #{$text-primary};
+  --el-text-color-regular: #{$text-primary};
+  --el-text-color-secondary: #{$text-secondary};
+  --el-text-color-placeholder: #{$text-secondary};
+  --el-border-color: #{$border};
+  --el-border-color-light: #{$border-light};
+  --el-fill-color: rgba(255, 255, 255, 0.06);
+  --el-fill-color-light: rgba(255, 255, 255, 0.04);
+  --el-fill-color-blank: #{$bg-card};
+  --el-color-primary: #{$accent-cyan};
+}
+
+html, body, #app {
+  background: $bg-base;
+  color: $text-primary;
+}
+
+// ===== 布局 =====
+.el-main {
+  background: $bg-base !important;
+  color: $text-primary !important;
+}
+
+.el-aside {
+  background: $bg-card !important;
+}
+
+.el-header {
+  background: $bg-card !important;
+  border-bottom: 1px solid $border !important;
+  color: $text-primary !important;
+}
+
+// ===== 卡片 =====
+.el-card {
+  background: $bg-card !important;
+  border: 1px solid $border !important;
+  border-radius: 12px !important;
+  color: $text-primary !important;
+
+  .el-card__header {
+    background: transparent !important;
+    border-bottom: 1px solid $border-light !important;
+    color: $text-primary !important;
+  }
+}
+
+// ===== 输入框 =====
+.el-input__wrapper {
+  background: $bg-input !important;
+  box-shadow: 0 0 0 1px $border inset !important;
+  border-radius: 8px;
+
+  &:hover {
+    box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.3) inset !important;
+  }
+
+  &.is-focus {
+    box-shadow: 0 0 0 1px $accent-cyan inset !important;
+  }
+}
+
+.el-input__inner {
+  color: $text-bright !important;
+
+  &::placeholder {
+    color: $text-secondary !important;
+  }
+}
+
+.el-textarea__inner {
+  background: $bg-input !important;
+  border-color: $border !important;
+  color: $text-bright !important;
+  border-radius: 8px;
+
+  &:focus {
+    border-color: $accent-cyan !important;
+  }
+}
+
+// ===== 表单 =====
+.el-form-item__label {
+  color: $text-secondary !important;
+}
+
+// ===== 表格 =====
+.el-table {
+  --el-table-bg-color: transparent !important;
+  --el-table-tr-bg-color: transparent !important;
+  --el-table-header-bg-color: rgba(0, 212, 255, 0.06) !important;
+  --el-table-row-hover-bg-color: rgba(0, 212, 255, 0.08) !important;
+  --el-table-border-color: #{$border-light} !important;
+  --el-table-text-color: #{$text-primary} !important;
+  --el-table-header-text-color: #{$text-bright} !important;
+  background: transparent !important;
+
+  th.el-table__cell {
+    background: rgba(0, 212, 255, 0.06) !important;
+    color: $text-bright !important;
+    font-weight: 600;
+    border-bottom-color: $border !important;
+  }
+
+  td.el-table__cell {
+    background: transparent !important;
+    border-bottom-color: $border-light !important;
+    color: $text-primary !important;
+  }
+
+  .el-table__row {
+    background: transparent !important;
+
+    &:hover > td {
+      background: rgba(0, 212, 255, 0.08) !important;
+    }
+  }
+
+  &::before, &::after {
+    background: $border-light !important;
+  }
+}
+
+// ===== 选择框 =====
+.el-select {
+  .el-input__wrapper {
+    background: $bg-input !important;
+  }
+}
+
+// ===== 所有弹出层 =====
+.el-select-dropdown,
+.el-picker-panel,
+.el-dropdown-menu,
+.el-popper,
+.el-popover,
+.el-menu--popup {
+  background: $bg-card !important;
+  border: 1px solid $border !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+.el-select-dropdown__item,
+.el-dropdown-menu__item {
+  color: $text-primary !important;
+
+  &:hover {
+    background: $bg-hover !important;
+    color: $text-bright !important;
+  }
+
+  &.selected {
+    color: $accent-cyan !important;
+    font-weight: 600;
+  }
+}
+
+// ===== 对话框 =====
+.el-dialog {
+  background: $bg-card !important;
+  border: 1px solid $border !important;
+  border-radius: 16px !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4) !important;
+
+  .el-dialog__header {
+    border-bottom: 1px solid $border-light !important;
+    padding: 18px 24px !important;
+  }
+
+  .el-dialog__title {
+    color: $text-bright !important;
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  .el-dialog__headerbtn .el-dialog__close {
+    color: $text-secondary !important;
+
+    &:hover {
+      color: $accent-cyan !important;
+    }
+  }
+
+  .el-dialog__body {
+    color: $text-primary !important;
+    padding: 24px !important;
+    background: transparent !important;
+  }
+
+  .el-dialog__footer {
+    border-top: 1px solid $border-light !important;
+    padding: 16px 24px !important;
+  }
+
+  // 对话框内所有元素
+  .el-form,
+  .el-form-item,
+  .el-form-item__content,
+  .el-form-item__label {
+    background: transparent !important;
+  }
+
+  .el-input__wrapper {
+    background: $bg-input !important;
+  }
+
+  .el-textarea__inner {
+    background: $bg-input !important;
+  }
+
+  .el-select .el-input__wrapper {
+    background: $bg-input !important;
+  }
+
+  .el-radio-group,
+  .el-radio {
+    background: transparent !important;
+  }
+
+  .el-input-number {
+    background: transparent !important;
+
+    .el-input__wrapper {
+      background: $bg-input !important;
+    }
+  }
+
+  .el-divider {
+    border-color: $border-light !important;
+
+    .el-divider__text {
+      background: $bg-card !important;
+      color: $text-secondary !important;
+    }
+  }
+
+  .el-switch {
+    background: transparent !important;
+  }
+}
+
+.el-overlay {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+// 对话框内的选择框下拉
+.el-select__popper,
+.el-picker-panel {
+  background: $bg-card !important;
+  border: 1px solid $border !important;
+}
+
+// 场景页面特殊样式
+.trigger-item,
+.action-item {
+  background: $bg-input !important;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+
+  .el-row {
+    background: transparent !important;
+  }
+
+  .el-col {
+    background: transparent !important;
+  }
+
+  .el-select,
+  .el-input,
+  .el-input-number {
+    background: transparent !important;
+  }
+}
+
+// 表单分隔线
+.el-divider {
+  border-color: $border !important;
+
+  .el-divider__text {
+    background: $bg-card !important;
+    color: $text-secondary !important;
+    font-size: 14px;
+    padding: 0 16px;
+  }
+}
+
+// 所有 el-row 和 el-col 背景透明
+.el-row,
+.el-col {
+  background: transparent !important;
+}
+
+// ===== 分页 =====
+.el-pagination {
+  background: transparent !important;
+  color: $text-secondary !important;
+
+  .el-pagination__total,
+  .el-pagination__jump,
+  .el-pagination__classifier {
+    color: $text-secondary !important;
+  }
+
+  button {
+    background: transparent !important;
+    color: $text-primary !important;
+
+    &:hover:not(:disabled) {
+      color: $accent-cyan !important;
+    }
+  }
+
+  .el-pager li {
+    background: transparent !important;
+    color: $text-primary !important;
+    border-radius: 6px;
+
+    &.is-active {
+      color: $accent-cyan !important;
+      background: rgba(0, 212, 255, 0.12) !important;
+    }
+
+    &:hover {
+      color: $accent-cyan !important;
+    }
+  }
+
+  .el-pagination__sizes .el-input__wrapper,
+  .el-pagination__jump .el-input__wrapper {
+    background: $bg-input !important;
+    box-shadow: 0 0 0 1px $border inset !important;
+  }
+
+  .el-pagination__jump .el-input__inner {
+    color: $text-bright !important;
+  }
+}
+
+// ===== 标签 =====
+.el-tag {
+  border: none !important;
+  border-radius: 6px;
+}
+
+// ===== 按钮 =====
+.el-button {
+  border-radius: 8px;
+}
+
+// ===== 消息框 =====
+.el-message-box {
+  background: $bg-card !important;
+  border: 1px solid $border !important;
+  border-radius: 16px !important;
+
+  .el-message-box__title {
+    color: $text-bright !important;
+  }
+
+  .el-message-box__message {
+    color: $text-primary !important;
+  }
+}
+
+// ===== 通知 =====
+.el-notification {
+  background: $bg-card !important;
+  border: 1px solid $border !important;
+  border-radius: 12px !important;
+}
+
+// ===== 面包屑 =====
+.el-breadcrumb {
+  .el-breadcrumb__inner {
+    color: $text-secondary !important;
+  }
+
+  .el-breadcrumb__inner.is-link:hover {
+    color: $accent-cyan !important;
+  }
+
+  .el-breadcrumb__separator {
+    color: $text-secondary !important;
+  }
+}
+
+// ===== 分割线 =====
+.el-divider {
+  border-color: $border-light !important;
+}
+
+// ===== 空状态 =====
+.el-empty__description p {
+  color: $text-secondary !important;
+}
+
+// ===== 开关 =====
+.el-switch__label {
+  color: $text-secondary !important;
+}
+
+// ===== 单选/复选 =====
+.el-radio__label,
+.el-checkbox__label {
+  color: $text-primary !important;
+}
+
+// ===== 加载 =====
+.el-loading-mask {
+  background: rgba(26, 31, 46, 0.8) !important;
+}
+
+// ===== 滚动条 =====
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
